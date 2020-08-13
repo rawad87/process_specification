@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+
+    <title>TronDOC Process Specification</title>
+  </head>
+
+  <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+  />
+  <link href="./views/ps_style.css" rel="stylesheet" />
+
+  <body>
+    <div id="app"></div>
+    <div id="paragraphs" style="margin-top: -20px;"></div>
+    <div id="editor"></div>
+    
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+    <!-- <script src="./js/dataAccess.js"></script> -->
+    <script src="./include/javascript/bit-array.js"></script>
+    <script src="./js/dummyDataAccess.js"></script>
+    <script src="./js/dataAccess.js"></script>
+    <script src="./js/xml2json.js"></script>
+    <script src="./js/json2xml.js"></script>
+    <script src="js/processSpecificationView.js"></script>
+    <script src="js/processSpecificationController.js"></script>
+    <script src="js/commonPs.js"></script>
+    <script src="./json/readPs1054.js"></script>
+    <script src="./json/users.js"></script>
+    <script src="./json/readParaTemp.js"></script>
+    <script src="./json/readPsTemp.js"></script>
+    <script>
+      
+        function test(){
+            return {      "exist:result": {
+              "process_specification": {
+                "content": {
+                    "para":[
+                                {
+                                   "@language":"en",
+                                   "@author":"216",
+                                   "@translator":"",
+                                   "heading":null,
+                                   "text":"&lt;p&gt;All parts for Assembly.&lt;/p&gt;"
+                                },
+                                {
+                                   "@language":"no",
+                                   "@author":"",
+                                   "@translator":"",
+                                   "heading":null,
+                                   "text":null
+                                },
+                                {
+                                   "@language":"lt",
+                                   "@author":"",
+                                   "@translator":"216",
+                                   "heading":null,
+                                   "text":"&lt;p&gt;Komponentai surinkimui.&lt;/p&gt;"
+                                }
+                             ],
+                }
+              }
+            }
+        }
+        }
+
+      
+      let useDb = false;
+      appContext = {
+        model: {},
+        services: {
+          dataAccess: useDb ? dataAccess : dummyDataAccess,
+        },
+      };
+//       function jsonObjToXml() {
+
+// let xmlDOM =json2xml(getDoc1054());
+// let encode = encodeXml(xmlDOM);
+// let y =  decodeHtml(encode);
+// console.log(y);
+// }
+// jsonObjToXml()
+// function test(){
+//   let x = jsonObjToXml(getDoc1054());
+//   console.log(x);
+// }
+// test()
+      initModel();
+      async function initModel() {
+        appContext.model.document = await appContext.services.dataAccess.readPS(1054);
+        appContext.model.userName = await appContext.services.dataAccess.usersFullName();
+        appContext.model.readParagraphTemplate = await appContext.services.dataAccess.readParaTemp();
+        appContext.model.readPsTemplate = await appContext.services.dataAccess.readPsTemp();
+        
+          // let resultSavePSContent = await appContext.services.dataAccess.savePSContent( docNum(), content());
+          // appContext.model.savePsContent =  appContext.services.dataAccess.jsonObjToXml(resultSavePSContent);
+     
+        
+        updateViewProcessSpecification();
+      }
+      
+    </script>
+  </body>
+</html>

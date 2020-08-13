@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<?php include_once('../include/headers/std_html_head.inc.php'); ?>
+
+		<!-- The styles for embedded HTML markup in ps paragraphs -->
+		<link href="./views/ps_style.css" rel="stylesheet" />
+		<title>PS</title>
+	</head>
+	<body>
+
+		<!-- Standard button -->
+		
+		<div id="editor" >
+			<button type="button" class="btn btn-default" onclick="initEditor('content')">
+			Xefault
+		</button>
+		<button type="button" class="btn btn-default" onclick="hide('hide')">
+			Hide
+		</button>
+		<button type="button" class="btn btn-default" onclick="hide('view')">
+			View
+		</button>
+			<form method="post">
+				<textarea id="content"/>
+			</form>
+		</div>
+
+<div id="editor2" >
+			<button type="button" class="btn btn-default" onclick="initEditor('content2')">
+			Xefault
+		</button>
+		<button type="button" class="btn btn-default" onclick="hide('hide')">
+			Hide
+		</button>
+		<button type="button" class="btn btn-default" onclick="hide('view')">
+			View
+		</button>
+			<form method="post">
+				<textarea id="content2"></textarea>
+			</form>
+		</div>
+		<!-- JavaScript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+		<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+		<script src="../../stylesheets/dist/js/bootstrap.min.js"></script>
+		<script src="../js/editWindow.js"></script>
+		<!-- Scripts for HTML editor -->
+		<script src="../../include/tinymce/tinymce.min.js"></script>
+		<script>
+			function initEditor(e) {
+				tinymce.init({
+					mode : "exact",
+    				elements : e,
+					
+					plugins : ["advlist autolink lists link image charmap print preview anchor", "searchreplace visualblocks code fullscreen", "insertdatetime media table contextmenu paste"],
+					toolbar : "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image"
+				});
+			}
+
+			function hide(state) {
+				if(state == 'hide')
+					document.getElementById('editor').style.display = "none";
+				else
+					document.getElementById('editor').style.display = "";
+			}
+		</script>
+
+	</body>
+</html>

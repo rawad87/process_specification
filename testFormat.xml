@@ -1,0 +1,35 @@
+<exist:result xmlns:exist="http://exist.sourceforge.net/NS/exist" exist:hits="1" exist:start="1" exist:count="1" exist:compilation-time="0" exist:execution-time="0">
+    <process_specification>
+        <biblioid>
+            <docnum>1054</docnum>
+            <#comment/>
+            <docsubnum>0</docsubnum>
+            <doctype>ps</doctype>
+            <group>process_specification</group>
+        </biblioid>
+        <content>
+        
+            <paragraph para_index="1464099288823" state="passive">
+                <revision approval_time="0" rev_index="1464099288824" approver="" state="draft">
+                    <changelog/>
+                    <para language="en" author="216" translator="">
+                        <heading/>
+                        <text>&lt;ul&gt;&lt;li&gt;On back housing pos.003 stick mic membrane 80073 pos.013.&lt;/li&gt;&lt;li&gt;Around it spread UV glues, pass throught oven.&lt;/li&gt;&lt;li&gt;Place some silicon inside plastic tower and inser &lt;span style="color: #ff0000;"&gt;rubber cap pos.015&lt;/span&gt;.&lt;/li&gt;&lt;/ul&gt;</text>
+                    </para>
+                    <para language="no" author="" translator="">
+                        <heading/>
+                        <text/>
+                    </para>
+                    <para language="lt" author="" translator="216">
+                        <heading/>
+                        <text/>
+                    </para>
+                    <gallery>
+                        <image>Fig14640993473775.png</image>
+                    </gallery>
+                </revision>
+            </paragraph>
+      
+        </content>
+    </process_specification>
+</exist:result>

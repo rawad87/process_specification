@@ -1,0 +1,260 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>QUnit Example</title>
+  <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.10.0.css" />
+</head>
+
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="https://code.jquery.com/qunit/qunit-2.10.0.js"></script>
+  <script src="js/commonPs.js"></script>
+  <script src="js/processSpecificationController.js"></script>
+  <script src="js/json2xml.js"></script>
+  <script src="js/xml2json.js"></script>
+
+  <script>
+    let appContext;
+
+    QUnit.test("test move down or up function - Rawad", function (assert) {
+      appContext = createTestData1();
+      moveParagraph("down", "1");
+      const paragraphs = getProcSpec().content.paragraph;
+      assert.equal(paragraphs[0]["@para_index"], '2');
+      assert.equal(paragraphs[1]["@para_index"], '1');
+    });
+    // QUnit.test("test converting JSON to XML - Rawad", function (assert) {
+    //   let jsonData = jsonTest2();
+    //   let convert = jsonObjToXmlTest(jsonData)
+    //   assert.equal(jsonData, convert);
+    // });
+    QUnit.test("test convert doc JSON to XML", function (assert) {
+      const appContext = createTestData2();
+      const actualXml = json2xml(appContext.model.document);
+
+      const expectedXml = `
+    <process_specification>
+      <biblioid>
+        <docnum>1054</docnum>
+        <docsubnum>0</docsubnum>
+        <doctype>ps</doctype>
+        <group>process_specification</group>
+    </biblioid>
+        <content>
+        
+          <paragraph para_index="1464099288823" state="passive">
+            <revision approval_time="0" rev_index="1464099288824" approver="" state="draft">
+                <changelog/>
+                <para language="en" author="216" translator="">
+                    <heading/>
+                    <text>&lt;ul&gt;
+                    &lt;li&gt;On back housing pos.003 stick mic membrane 80073 pos.013.&lt;/li&gt;
+                    &lt;li&gt;Around it spread UV glues, pass throught oven.&lt;/li&gt;
+                    &lt;li&gt;Place some silicon inside plastic tower and inser &lt;span style="color: #ff0000;"&gt;rubber cap pos.015&lt;/span&gt;.&lt;/li&gt;
+                    &lt;/ul&gt;</text>
+                </para>
+                    <para language="no" author="" translator="">
+                        <heading/>
+                        <text/>
+                    </para>
+                
+                    <gallery>
+                    <image>Fig14640993473775.png</image>
+                </gallery>
+                </revision>
+            </paragraph>
+      
+        </content>
+    </process_specification>`;
+      assert.equal(prettifyXml(actualXml), prettifyXml(expectedXml));
+    });
+    // QUnit.test("test convert doc JSON to XML special characters", function (assert) {
+    //   let testJsonObj = testJson();
+    //   console.log(testJsonObj)
+    //   const actualXml = jsonObjToXmlTest( testJsonObj);
+      
+
+    // console.log(actualXml)
+
+    //   const expectedXml = `
+    //     <content>
+        
+    //       <paragraph para_index="1464099288823" state="passive">
+           
+    //             <para language="en" author="216" translator="">
+    //                 <heading/>
+    //                 <text>&lt;ul&gt;
+    //                 &lt;li&gt;On back housing pos.003 stick mic membrane 80073 pos.013.&lt;/li&gt;
+    //                 &lt;li&gt;Around it spread UV glues, pass throught oven.&lt;/li&gt;
+    //                 &lt;li&gt;Place some silicon inside plastic tower and inser &lt;span style="color: #ff0000;"&gt;rubber cap pos.015&lt;/span&gt;.&lt;/li&gt;
+    //                 &lt;/ul&gt;</text>
+    //             </para>
+    //             </paragraph>
+      
+    //     </content>`;
+    //   assert.equal( actualXml, expectedXml);
+    // });
+
+function testJson(){
+
+  return `{
+    "content":{
+   "paragraph": {
+      "@para_index": "1464099288823",
+      "@state": "passive",
+      "para": {
+         "@language": "en",
+         "@author": "216",
+         "@translator": "",
+         "heading": [],
+         "text": "<ul>            
+                 <li>On back housing pos.003 stick mic membrane 80073 pos.013.</li>  
+                <li>Around it spread UV glues, pass throught oven.</li>            
+               <li>Place some silicon inside plastic tower and inser <span style="color: #ff0000;">rubber cap pos.015</span>.</li>
+                </ul>"
+      }
+   }
+  }
+}`
+}
+
+    function jsonTest2() {
+
+      return {
+        "exist:result": {
+          "process_specification": {
+            "content": {
+              "paragraph": [
+
+                {
+                  "@para_index": "2",
+                  "@state": "active",
+                  "text": "&lt;p&gt;All parts for Assembly.&lt;/p&gt;"
+                },
+                {
+                  "@para_index": "2",
+                  "@state": "active",
+                  "text": "&lt;ul&gt;\n&lt;li&gt;On back housing pos.003 stick mic membrane 80073 pos.013.&lt;/li&gt;\n&lt;li&gt;Around it spread UV glues, pass throught oven.&lt;/li&gt;\n&lt;li&gt;Place some silicon inside plastic tower and inser &lt;span style=\"color: #ff0000;\"&gt;rubber cap pos.015&lt;/span&gt;.&lt;/li&gt;\n&lt;/ul&gt;"
+
+                },
+              ]
+            }
+          }
+        }
+      }
+    }
+    function createTestData1() {
+      return {
+        model: {
+          document:
+          {
+            "exist:result": {
+              "process_specification": {
+                "content": {
+                  "paragraph": [
+                    {
+                      "@para_index": "1",
+                      "@state": "active",
+                    },
+                    {
+                      "@para_index": "2",
+                      "@state": "active",
+                    },
+                    {
+                      "@para_index": "2",
+                      "@state": "active",
+                    },
+                  ]
+                }
+              }
+            }
+          }
+        },
+      };
+    }
+    function createTestData2() {
+      return {
+        model: {
+          document:
+          {
+
+            "process_specification": {
+
+              "biblioid": {
+                "docnum": "1054",
+                "docsubnum": "0",
+                "doctype": "ps",
+                "group": "process_specification"
+              },
+              "content": {
+                "paragraph": {
+                  "@para_index": "1464099288823",
+                  "@state": "passive",
+                  "revision": {
+                    "@state": "draft",
+                    "@approval_time": "0",
+                    "@approver": "",
+                    "@rev_index": "1464099288824",
+                    "changelog": null,
+                    "para": [
+                      {
+                        "@language": "en",
+                        "@author": "216",
+                        "@translator": "",
+                        "heading": null,
+                        "text": "&lt;ul&gt;\n&lt;li&gt;On back housing pos.003 stick mic membrane 80073 pos.013.&lt;/li&gt;\n&lt;li&gt;Around it spread UV glues, pass throught oven.&lt;/li&gt;\n&lt;li&gt;Place some silicon inside plastic tower and inser &lt;span style=\"color: #ff0000;\"&gt;rubber cap pos.015&lt;/span&gt;.&lt;/li&gt;\n&lt;/ul&gt;"
+                      },
+                      {
+                        "@language": "no",
+                        "@author": "",
+                        "@translator": "",
+                        "heading": null,
+                        "text": null
+                      },
+
+                    ],
+                    "gallery": {
+                      "image": "Fig14640993473775.png"
+                    }
+                  }
+                }
+
+              }
+            }
+
+          }
+        },
+      };
+    }
+
+
+    var prettifyXml = function(sourceXml)
+{
+    var xmlDoc = new DOMParser().parseFromString(sourceXml, 'application/xml');
+    var xsltDoc = new DOMParser().parseFromString([
+        // describes how we want to modify the XML - indent everything
+        '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+        '  <xsl:strip-space elements="*"/>',
+        '  <xsl:template match="para[content-style][not(text())]">', // change to just text() to strip space in text nodes
+        '    <xsl:value-of select="normalize-space(.)"/>',
+        '  </xsl:template>',
+        '  <xsl:template match="node()|@*">',
+        '    <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>',
+        '  </xsl:template>',
+        '  <xsl:output indent="yes"/>',
+        '</xsl:stylesheet>',
+    ].join('\n'), 'application/xml');
+
+    var xsltProcessor = new XSLTProcessor();    
+    xsltProcessor.importStylesheet(xsltDoc);
+    var resultDoc = xsltProcessor.transformToDocument(xmlDoc);
+    var resultXml = new XMLSerializer().serializeToString(resultDoc);
+    return resultXml;
+};
+  </script>
+</body>
+
+</html>
