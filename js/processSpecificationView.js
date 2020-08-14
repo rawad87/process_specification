@@ -50,7 +50,9 @@
     <h3>${procSpec.info.title}</h3>
     <h4>${ procSpec.info.subtitle}</h4>
     ${flags()}  
-    ${documentProperties()} `;
+    ${documentProperties()} 
+    ${modalConfirmRemovePara()} 
+    ${modelApprovalParagraph()}`;
     viewParagraphs()
 }
 
@@ -76,6 +78,22 @@ function flags() {
               <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span> Add Paramgraph
           </a>
     </div>
+    <div id="paragraphs"  style="margin-top: -20px; ">
+				<!-- All paragraphs HTML goes here -->
+			</div>
+			<br />
+			<div id="editor">
+				<!-- The editor goes here -->
+			</div>
+            <!-- File upload support multiple files selectable for additions-->
+             <div style='height: 0px;width: 0px; overflow:hidden;'>
+               <input id="pictureFile" type="file" value="upload" multiple/>
+             </div>
+             
+            <!-- File upload support single file for replacement of an existing image-->
+             <div style='height: 0px;width: 0px; overflow:hidden;'>
+               <input id="replacementPictureFile" type="file" value="upload"/>
+             </div>
             `;
 }
 function getLanguage() {
@@ -480,4 +498,51 @@ function exInp(exTrueChecked, exFalseChecked) {
                     <td><input type='radio' name='exRadioBtn' value='false' ${exFalseChecked}> not restricted</td><td/>
                 </form></tr>`;
     return exInputs
+}
+function modalConfirmRemovePara(){
+    return `		<div class="modal fade" id="confirmRemoveModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel">Please confirm that you will remove this paragraph</h4>
+        </div>
+        <div class="modal-body">
+            <p id="remove_para_index" style="display: none"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" id="paraRemoveBtn" class="btn btn-primary" onclick="removeParagraph()">Confirm Paragraph Removal</button>
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
+function confirmRemoveParagraph (para_index) {
+	//modalConfirmRemovePara()
+	var displayRemoveBtn = canApproveParagraph() ? "" : "none";
+	document.getElementById("paraRemoveBtn").style.display= displayRemoveBtn;
+	document.getElementById('remove_para_index').innerHTML = para_index;
+	$('#confirmRemoveModal').modal('show');
+}
+function modelApprovalParagraph(){
+    return `<div class="modal fade" id="revisionsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel">Revision Reason</h4>
+        </div>
+        <div class="modal-body">
+            <p id="approval_para_index" style="display: none"></p>
+          <textarea id="approval_changelog" class="form-control" rows="3" placeholder="Write a reason for the paragraph update."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" id="paraApprovalBtn" class="btn btn-primary" onclick="approvalConfirmed()">Confirm Paragraph Approval</button>
+        </div>
+      </div>
+    </div>
+  </div>`
 }

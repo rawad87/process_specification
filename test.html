@@ -34,10 +34,12 @@
     <script src="js/processSpecificationView.js"></script>
     <script src="js/processSpecificationController.js"></script>
     <script src="js/commonPs.js"></script>
+    <script src="js/psViewOpenEditor.js"></script>
     <script src="./json/readPs1054.js"></script>
     <script src="./json/users.js"></script>
     <script src="./json/readParaTemp.js"></script>
     <script src="./json/readPsTemp.js"></script>
+    <script src="../include/tinymce/tinymce.min.js"></script>
     <script>
       
         function test(){
@@ -81,19 +83,7 @@
           dataAccess: useDb ? dataAccess : dummyDataAccess,
         },
       };
-//       function jsonObjToXml() {
 
-// let xmlDOM =json2xml(getDoc1054());
-// let encode = encodeXml(xmlDOM);
-// let y =  decodeHtml(encode);
-// console.log(y);
-// }
-// jsonObjToXml()
-// function test(){
-//   let x = jsonObjToXml(getDoc1054());
-//   console.log(x);
-// }
-// test()
       initModel();
       async function initModel() {
         appContext.model.document = await appContext.services.dataAccess.readPS(1054);

@@ -162,3 +162,58 @@ function getTimestamp () {
 	var timestamp = dateObj.getTime();
 	return timestamp;
 }
+function getLanguageString(language) {
+    var languagesNameArray = {en:'English', no:'Norwegian', lt:'Lithuanian'};
+    switch (language) {
+        case 'no':
+            langTag = languagesNameArray.no;
+            break;
+        case 'lt':
+            langTag = languagesNameArray.lt;
+            break;
+        default:
+            langTag = languagesNameArray.en;
+    }
+    return langTag;
+}
+function workingGalleryHTML(workRevision) {
+    var galleryTableCols = 2;
+    var j = 0;
+    result = "<div id='workingGallery'>";
+    console.log(workRevision)
+    imageNodeList = workRevision.image;
+    console.log(imageNodeList)
+    result += "<table border='1' frame='void' rules='all' > ";
+    result += "<tr><td  id='dropZoneContainer'class='galleryEditorImageContainer'><div id='dropZoneDiv'onclick='addImage();' class='paraimageEdit uploadDropZone'>Add image file</div></td>";
+    if (!Array.isArray(imageNodeList)) {
+        let arr = []
+        arr.push(imageNodeList);
+        imageNodeList = arr;
+    }
+    while (j < imageNodeList.length) {
+        imageNode = imageNodeList[j];
+        // imageFilename = imageNode.firstChild.nodeValue;
+        if (j % galleryTableCols == 0) {
+            result += "<tr>";
+        }
+
+        let imagerepo1 = `http://trondoc.jotron.inet/ps_images/${imageNode}`;
+        result += `<td  class='galleryEditorImageContainer'>
+       <img ondragstart='dragStartImageEditor(event)' ondragover='imageEditorAllowDrop(event)' ondrop='dropImageEditor(event)'  draggable='true'  title='${imageTitleRoot(j)}' 
+        id='ImgIndex:${j}' src='${imagerepo1}'  alt='' class='paraimageEdit' />
+       <span class='galleryEditorControls'>
+       <button title='Delete image'  onClick='removeImage(imageNodeList[${j}])' type='button' class='btn btn-danger btn-xs'>
+       <span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button>
+       <button title='Replace image' onClick='replaceImage(imageNodeList[${j}]);' type='button' class='btn btn-primary btn-xs'>
+       <span class='glyphicon glyphicon-import' aria-hidden='true'></span></button>
+       </span>
+       </td>`;
+        j++;
+        if (j % galleryTableCols == 0) {
+            result += "</tr>";
+        }
+    }
+    result += "</table>";
+    result += "</div>";
+    return result;
+}
