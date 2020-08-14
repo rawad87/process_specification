@@ -170,30 +170,30 @@ function approvalConfirmed() {
 	}
 	updateParagraph(para_index, rev_index);
 	saveUpdatedPsContent();
-	saveUpdatedPsInfo();
+	viewParagraphs();
 }
 async function saveUpdatedPsContent() {
 	await convertDataAndSendToDataBase();
 
 }
 
-async function saveUpdatedPsInfo() {
-	/* Save the info node of the document */
-	// 	readPS();
-	let infoNode = getProcSpec().info;
-	let contentResult = await convertObjToXml(infoNode);
-	await dataAccess.savePsInfo(docNum(), contentResult);
-	viewParagraphs();
-}
-async function saveUpdatedPsInfo1() {
-	/* Save the info node of the document */
-	// 	readPS();
-	let docNum = getProcSpec().biblioid.docnum;
-	let infoNode = getProcSpec().info;
-	let contentResult = await convertObjToXmlInfo(infoNode);
-	await dataAccess.savePsInfo(docNum, contentResult);
-	//viewParagraphs();
-}
+// async function saveUpdatedPsInfo() {
+// 	/* Save the info node of the document */
+// 	// 	readPS();
+// 	let infoNode = getProcSpec().info;
+// 	let contentResult = await convertObjToXml(infoNode);
+// 	await dataAccess.savePsInfo(docNum(), contentResult);
+// 	viewParagraphs();
+// }
+// async function saveUpdatedPsInfo1() {
+// 	/* Save the info node of the document */
+// 	// 	readPS();
+// 	let docNum = getProcSpec().biblioid.docnum;
+// 	let infoNode = getProcSpec().info;
+// 	let contentResult = await convertObjToXmlInfo(infoNode);
+// 	await dataAccess.savePsInfo(docNum, contentResult);
+// 	//viewParagraphs();
+// }
 function updateParagraph(para_index, rev_index) {
 	/* Changing content of paragraph on screen */
 	let paragraphsNodeList = getProcSpec().content.paragraph;
@@ -417,12 +417,11 @@ async function saveDocProperties(isNewDoc) {
 
 	}
 	else {
-		// savePsInfo();
-		//saveUpdatedPsInfo1()
+		
 		let docNum = getProcSpec().biblioid.docnum;
 		let contentResult = await convertObjToXmlInfoForChangeProp(nodeInfo);
 		console.log(contentResult)
-		await dataAccess.savePsInfo(docNum, contentResult);
+		await dataAccess.savePSInfoTest(docNum, contentResult);
 
 	}
 	viewParagraphs();

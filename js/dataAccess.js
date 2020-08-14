@@ -27,6 +27,9 @@ const dataAccess = {
     savePsInfo: async function (docnum, content) {
         return await this.readXmlAjaxServer('savePsInfo', docnum, content);
     },
+    savePSInfoTest: async function (docnum, content) {
+        return await this.readXmlAjaxServer('savePsInfo', docnum, content);
+    },
 
     usersFullName: async function () {
         return await this.readXmlAjaxServer('usersFullName', '', '');
