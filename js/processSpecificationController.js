@@ -116,7 +116,7 @@ function approveParagraph(para_index) {
 	document.getElementById('approval_para_index').innerHTML = para_index;
 	$('#revisionsModal').modal('show');
 }
-function approvalConfirmed() {
+async function approvalConfirmed() {
 	let paragraphsNodeList = getProcSpec().content.paragraph;
 	$('#revisionsModal').modal('hide');
 	var para_index = document.getElementById('approval_para_index').innerHTML;
@@ -144,33 +144,26 @@ function approvalConfirmed() {
 			revisionsNodeList[draftNodeIndex]['@approval_time'] = dateObj.getTime();
 			revisionsNodeList[draftNodeIndex]['@approver'] = userIndex;
 			revisionsNodeList[draftNodeIndex].changelog = changelog;
-			console.log(revisionsNodeList[draftNodeIndex])
-			// if(changelogNode.hasChildNodes(){changelogNode.firstChild.nodeValue = changelog;}
-			// else {
-			// 	var newtext = psDoc.createTextNode(changelog);
-			// 	changelogNode.appendChild(newtext);
-			// }
 
 			var nodeInfo = getProcSpec().info;
-			var docEditionNode = nodeInfo["document_edition"];
-			parseInt(docEditionNode) + 1
-			//	console.log(parseInt(docEditionNode) + 1);
-			//alert(docEditionNode.firstChild.nodeValue);
-			// if(docEditionNode.hasChildNodes())
-			// {
-			// 	//alert('child node');
-			// 	docEditionNode.firstChild.nodeValue = (parseInt(docEditionNode.firstChild.nodeValue) + 1) ;
-			// }
-			// else {
-			// 	//alert('no child');
-			// 	var newtext = psDoc.createTextNode('1');
-			// 	docEditionNode.appendChild(newtext);
-			// }
+			if (nodeInfo.document_edition != null) {
+				nodeInfo.document_edition = parseInt(nodeInfo.document_edition) + 1
+			}
+			if (nodeInfo.document_edition == null) {
+				nodeInfo.document_edition = '1';
+			}
+
 		}
 	}
 	updateParagraph(para_index, rev_index);
 	saveUpdatedPsContent();
+	saveAndSendPsInfo(nodeInfo);
 	viewParagraphs();
+}
+async function saveAndSendPsInfo(nodeInfo) {
+	let docNum = getProcSpec().biblioid.docnum;
+	let contentResult = await convertObjToXmlInfoForChangeProp(nodeInfo);
+	await dataAccess.savePSInfoTest(docNum, contentResult);
 }
 async function saveUpdatedPsContent() {
 	await convertDataAndSendToDataBase();
@@ -314,27 +307,19 @@ async function saveDraft(para_index, language, langstate) {
 							// var textNode = paraNodeList[i]['text'];
 							if (paraNodeList[i]['text'] != '') {
 								paraNodeList[i]['text'] = encodeXml(newText);
-								console.log(encodeXml(newText));
 							}
-							else {
-
-								paraNodeList[i]['text'] = encodeXml(newText);
-							}
+							else {paraNodeList[i]['text'] = encodeXml(newText);}
 
 							var newHeading = document.getElementById('newparaheading_' + language).value;
 							if (paraNodeList[i]['heading'] != '') {
 								paraNodeList[i]['heading'] = encodeXml(newHeading);
 							}
-							else {
-								paraNodeList[i]['heading'] = encodeXml(newHeading);
-							}
+							else {paraNodeList[i]['heading'] = encodeXml(newHeading);}
 
 							if (langstate == 'main') {
 								paraNodeList[i]["@author"] = userIndex;
 							}
-							else {
-								paraNodeList[i]["@translator"] = userIndex;
-							}
+							else {paraNodeList[i]["@translator"] = userIndex;}
 
 						}
 					}
@@ -342,8 +327,6 @@ async function saveDraft(para_index, language, langstate) {
 
 			}
 			await convertDataAndSendToDataBase();
-
-			//viewParagraphs();
 			break;
 		}
 	}

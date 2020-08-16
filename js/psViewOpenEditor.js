@@ -6,14 +6,11 @@ function viewParaForEdit(para_index) {
 
     document.getElementById('languageSelectors').style.display = "none";
     var textHtml = '';
-    var para = '';
     var langTag = '';
     var editorID = new Array();
     var paraTextID = new Array();
     var langArray = new Array();
     var { draftRevision, j, i } = getParNodeListInfo(paragraphsNodeList, para_index);
-
-    
 
     /* Building the text parts of the paragraph */
     paraNodeList = paraNodeList1;
@@ -32,31 +29,13 @@ function viewParaForEdit(para_index) {
         ({ langTag, textHtml } = showInfoInEditor(j, paranum, langTag, langArray, editorID, paraTextID, textHtml, para_index));
     }
 
-    anchor = "<a  id='editor' class='paragraphnum' >Paragraph Editor </a>";
-    editorpanel = '<div class="panel panel-default" style="margin:10px 10px 10px 10px;"><div class="panel-body">'
-        + anchor
-        + "<a href='#paraindex_" + para_index + "' onclick='saveAndReturn()'>"
-        + '<button type="button" class="btn btn-success" id="backToPSBtn" style="margin-left:10px;margin-right: 10px;" aria-label="Left Align"><span class="glyphicon glyphicon-backward" aria-hidden="true"></span> Back to <strong>PS</strong></button>'
-        + "</a>"
-        + "<a href='#paraindex_" + para_index + "' onclick='removeDraft(\"" + para_index + "\")'>"
-        + '<button type="button" class="btn btn-danger" id="removeDraftBtn" style="margin-left:10px;margin-right: 10px;" aria-label="Left Align"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Remove <strong>Draft</strong></button>'
-        + "</a>"
-        + '</div></div>';
+    createEditorPanel(para_index);
 
     /* --- Building the image parts of the paragraph --- */
     imageHtml = workingGalleryHTML(draftRevision["gallery"]);
 
 
-    html = '<div class="paragraphEdit">'
-        + editorpanel
-        + '<!--<p class="paralanguageEdit">Index ' + para_index + '</p>-->'
-        + textHtml
-
-        + '<div class="paraimagesEdit">'
-        + imageHtml
-        + '</div>'
-
-        + '</div>';
+    html = `<div class="paragraphEdit">${editorpanel}<!--<p class="paralanguageEdit">Index ${para_index}</p>-->${textHtml}<div class="paraimagesEdit">${imageHtml}</div></div>`;
     document.getElementById('editor').innerHTML = html;
 
     for (var i = 0; i < langArray.length; i++) {
@@ -72,6 +51,17 @@ function viewParaForEdit(para_index) {
     dropZone.addEventListener('drop', handleFileDrop, false);
 
 }
+function createEditorPanel(para_index) {
+    anchor = `<a  id='editor' class='paragraphnum' >Paragraph Editor </a>`;
+    editorpanel = `<div class="panel panel-default" style="margin:10px 10px 10px 10px;">
+    <div class="panel-body">${anchor}<a href='#paraindex_${para_index}' onclick='saveAndReturn()'>
+    <button type="button" class="btn btn-success" id="backToPSBtn" style="margin-left:10px;margin-right: 10px;" aria-label="Left Align">
+    <span class="glyphicon glyphicon-backward" aria-hidden="true"></span> Back to <strong>PS</strong></button></a>
+    <a href='#paraindex_${para_index}' onclick='removeDraft("${para_index}")'>
+    <button type="button" class="btn btn-danger" id="removeDraftBtn" style="margin-left:10px;margin-right: 10px;" aria-label="Left Align">
+    <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Remove <strong>Draft</strong></button></a></div></div>`;
+}
+
 function showInfoInEditor(j, paranum, langTag, langArray, editorID, paraTextID, textHtml, para_index) {
     if (j == 0) {
         /* If main language */
@@ -94,11 +84,15 @@ function showInfoInEditor(j, paranum, langTag, langArray, editorID, paraTextID, 
     var paraheading = paraNodeList[paranum]['heading'];
     var paratext = paraNodeList[paranum]['text'];
 
-
     /* Using a <blockquote> for displaying para text and a <textarea> for displaying the TinyMCE editor */
     langArray[j] = language;
     editorID[j] = "editor_" + language;
     paraTextID[j] = "paratext_" + language;
+    textHtml = showParagraphInfoInEditor(textHtml, langTag, language, backgroundImage, allowEdit, editBtnText, paraheading, paraTextID, j, paratext, para_index, langstate, editorID);
+    return { langTag, textHtml };
+}
+
+function showParagraphInfoInEditor(textHtml, langTag, language, backgroundImage, allowEdit, editBtnText, paraheading, paraTextID, j, paratext, para_index, langstate, editorID) {
     textHtml += `<div class='paradivEdit'>
 		<!--<p class='paralanguageEdit'>${langTag}</p>-->
 		<div  class='paratextEdit'>
@@ -114,7 +108,7 @@ function showInfoInEditor(j, paranum, langTag, langArray, editorID, paraTextID, 
 		<span class='glyphicon glyphicon-remove' aria-hidden='true'></span> Forget</button>
 		</div><input type='text' class='form-control' id='newparaheading_${language}' placeholder='Heading' style='width:50%;margin-bottom:10px;' value='${decodeHtml(paraheading)}' />
 		<textarea name='content' id='${editorID[j]}' rows='10'  >${paratext}</textarea></div> </div></div>`;
-    return { langTag, textHtml };
+    return textHtml;
 }
 
 function getParNodeListInfo(paragraphsNodeList, para_index) {
@@ -129,7 +123,6 @@ function getParNodeListInfo(paragraphsNodeList, para_index) {
                     var draftRevision = currentParagraph["revision"][z];
                     paraNodeList1 = currentParagraph["revision"][z].para;
                     imageEditorContextworkRevision = draftRevision;
-                    console.log(imageEditorContextworkRevision)
                     break;
 
                 }
@@ -137,8 +130,8 @@ function getParNodeListInfo(paragraphsNodeList, para_index) {
 
                     /* If there is no revision in state='draft', the first revision is cloned, changed to 'draft' and inserted as first revision node */
                     var approvedRev = currentParagraph["revision"][z];
-                    // console.log(approvedRev);
-                    var clonedNode = approvedRev;
+                    console.log(approvedRev);
+                    var clonedNode = { ...approvedRev };
                     clonedNode['@state'] = 'draft';
                     clonedNode['@approval_time'] = '';
                     clonedNode['@approver'] = '';
@@ -148,18 +141,12 @@ function getParNodeListInfo(paragraphsNodeList, para_index) {
                         clonedParaNodeList[i]['@author'] = '';
                         clonedParaNodeList[i]['@translator'] = '';
                     }
-                    try {
-                        var changelogNode = clonedNode["changelog"];
-                        var textnode = changelogNode.childNodes[0];
-                        changelogNode.removeChild(textnode);
-                    }
-                    catch (e) { }
+
+                    clonedNode["changelog"] = '';
                     var dateObj = new Date();
                     clonedNode['@rev_index'] = dateObj.getTime();
-                    // var rootElement = psDoc.documentElement;
-                    //approvedRev.parentNode.insertBefore(clonedNode,approvedRev);
-                    // clonedNode = clonedNode -1;
-                    // console.log(clonedNode);
+
+                    currentParagraph["revision"].unshift(clonedNode)
                     var draftRevision = currentParagraph["revision"][z];
                     paraNodeList1 = currentParagraph["revision"][z].para;
                     imageEditorContextworkRevision = draftRevision;
@@ -190,11 +177,8 @@ function handleDragOver(evt) {
 
 function viewEditor(para_index) {
     viewParaForEdit(para_index);
-    //alert(para_index);
-    //document.getElementById('editor').innerHTML = editParagraph;
     document.getElementById('paragraphs').style.display = "none";
     document.getElementById('editor').style.display = "";
-    //document.getElementById('paragraphs').style.display = "none";
 }
 function imageSelected(evt) {
     var files = evt.target.files;
@@ -212,7 +196,6 @@ function handleSelectedFile(selectedFile, targetImage) {
 
     var gallery = currentRevision["gallery"];
     /* Ensure that no whitespace is within the name  */
-    /*var ImageFileStoredName = ("Fig" + (new Date()).getTime() + selectedFile.name).replace(/\W/g, '');*/
     var ImageFileStoredName = ("Fig" + (new Date()).getTime() + selectedFile.name).replace(/[^.,/\w]+/g, '');
     var textElement = ImageFileStoredName;
     dstImageNode = targetImage;
@@ -238,7 +221,7 @@ function handleSelectedFile(selectedFile, targetImage) {
 }
 function makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision, selectedFile) {
     var reader = new FileReader();
-    reader.onload = async function (e) {
+    reader.onload = async function () {
         var dataURL = reader.result;
         var tempFileInfo = dataURL.split(';');
         var fileType = tempFileInfo[0].split(':');
@@ -271,7 +254,6 @@ function htmlEditor(state, language, para_index, langstate) {
     /* Viewing the editor on a specified place (editorarea) */
     var paraTextArea = "paraTextArea_" + language;
     var htmlEditorArea = "htmlEditorArea_" + language;
-    var editor = "editor_" + language;
     var paratext = "paratext_" + language;
     var newparaheading = "newparaheading_" + language;
     var paraheading = "paraheading_" + language;
@@ -333,15 +315,15 @@ function replaceImage(replaceImageNode) {
 }
 /* remove from the psdoc */
 function removeImage(node) {
-    if (!Array.isArray(imageEditorContextworkRevision.gallery['image'])){
+    if (!Array.isArray(imageEditorContextworkRevision.gallery['image'])) {
         let arr = [];
         arr.push(imageEditorContextworkRevision.gallery['image']);
         imageEditorContextworkRevision.gallery['image'] = arr;
 
     }
-    for(let i  = 0; i <imageEditorContextworkRevision.gallery['image'].length; i++ ){
+    for (let i = 0; i < imageEditorContextworkRevision.gallery['image'].length; i++) {
         console.log(imageEditorContextworkRevision.gallery['image'][i])
-        if(imageEditorContextworkRevision.gallery['image'][i].match(node)){
+        if (imageEditorContextworkRevision.gallery['image'][i].match(node)) {
             imageEditorContextworkRevision.gallery['image'].splice(i, 1);
         }
     }
