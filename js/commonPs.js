@@ -180,7 +180,11 @@ function workingGalleryHTML(workRevision) {
     var galleryTableCols = 2;
     var j = 0;
     result = "<div id='workingGallery'>";
-    console.log(workRevision)
+    if(workRevision == null || workRevision == ''){
+        workRevision = {}
+        workRevision.image = [];
+
+    }
     imageNodeList = workRevision.image;
     console.log(imageNodeList)
     result += "<table border='1' frame='void' rules='all' > ";
