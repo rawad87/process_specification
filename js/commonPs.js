@@ -221,3 +221,12 @@ function workingGalleryHTML(workRevision) {
     result += "</div>";
     return result;
 }
+function checkIfNotArray(ElemetnToCheck) {
+    if (!Array.isArray(ElemetnToCheck)) {
+        let arr = [];
+        arr.push(ElemetnToCheck);
+        ElemetnToCheck = arr;
+        console.log(ElemetnToCheck);
+    }
+    return ElemetnToCheck;
+}

@@ -3,43 +3,22 @@ function viewParaForEdit(para_index) {
 
     /* Building the html content for the editor area */
     let paragraphsNodeList = getProcSpec().content.paragraph;
-
-    document.getElementById('languageSelectors').style.display = "none";
-    var textHtml = '';
-    var langTag = '';
-    var editorID = new Array();
-    var paraTextID = new Array();
-    var langArray = new Array();
-    var { draftRevision, j, i } = getParNodeListInfo(paragraphsNodeList, para_index);
+    let objValues = initiValues();
+    getParagraphNodeList(paragraphsNodeList, para_index, objValues)
 
     /* Building the text parts of the paragraph */
-    paraNodeList = paraNodeList1;
+    let paraNodeList = objValues.paraNodeList1;
+    paraNodeList = checkIfNotArray(paraNodeList);
+    objValues.paraNodeList = paraNodeList;
 
-    let docLanguages = getLanguage();
-    for (var j = 0; j < docLanguages.length; j++) {
-        /* Find the /para corresponding to language */
-        var paranum = 0;
-        for (var x = 0; x < paraNodeList.length; x++) {
-            if (paraNodeList[x]["@language"] == docLanguages[j]) {
-                paranum = x;
-                break;
-            }
-        }
-        var langTag;
-        ({ langTag, textHtml } = showInfoInEditor(j, paranum, langTag, langArray, editorID, paraTextID, textHtml, para_index));
-    }
-
+    languageInfo(paraNodeList, objValues, para_index);
     createEditorPanel(para_index);
 
     /* --- Building the image parts of the paragraph --- */
-    imageHtml = workingGalleryHTML(draftRevision["gallery"]);
+    editor(objValues, para_index);
 
-
-    html = `<div class="paragraphEdit">${editorpanel}<!--<p class="paralanguageEdit">Index ${para_index}</p>-->${textHtml}<div class="paraimagesEdit">${imageHtml}</div></div>`;
-    document.getElementById('editor').innerHTML = html;
-
-    for (var i = 0; i < langArray.length; i++) {
-        document.getElementById('htmlEditorArea_' + langArray[i]).style.display = "none";
+    for (var i = 0; i < objValues.langArray.length; i++) {
+        document.getElementById('htmlEditorArea_' + objValues.langArray[i]).style.display = "none";
     }
     // listener for file select change handler 
     document.getElementById('pictureFile').addEventListener('change', imageSelected, false);
@@ -51,6 +30,17 @@ function viewParaForEdit(para_index) {
     dropZone.addEventListener('drop', handleFileDrop, false);
 
 }
+
+
+
+function editor(objValues, para_index) {
+    let imageHtml = workingGalleryHTML(objValues.draftRevision["gallery"]);
+    let html = `<div class="paragraphEdit">${editorpanel}
+    <!--<p class="paralanguageEdit">Index ${para_index}</p>-->
+    ${objValues.textHtml}<div class="paraimagesEdit">${imageHtml}</div></div>`;
+    document.getElementById('editor').innerHTML = html;
+}
+
 function createEditorPanel(para_index) {
     anchor = `<a  id='editor' class='paragraphnum' >Paragraph Editor </a>`;
     editorpanel = `<div class="panel panel-default" style="margin:10px 10px 10px 10px;">
@@ -62,67 +52,81 @@ function createEditorPanel(para_index) {
     <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Remove <strong>Draft</strong></button></a></div></div>`;
 }
 
-function showInfoInEditor(j, paranum, langTag, langArray, editorID, paraTextID, textHtml, para_index) {
-    if (j == 0) {
-        /* If main language */
-        var editBtnText = " Edit ";
-        var allowEdit = "";
-        mainLangEdited = (paraNodeList[paranum]["@author"] != "") ? true : false;
-        var langstate = 'main';
-    }
-    else {
-        /* If sub languages */
-        var editBtnText = " Translate to ";
-        var allowEdit = mainLangEdited ? "" : "disabled";
-        var langstate = 'sub';
-        var backgroundTranslMissing = "background-image: url(\"./graphics/translation_needed.png\"); background-repeat:no-repeat; background-position:10% 50%;";
-        var backgroundImage = (paraNodeList[paranum]["@translator"] != "") ? "" : backgroundTranslMissing;
-    }
-    var language = paraNodeList[paranum]["@language"];
-    var langTag = getLanguageString(language);
+function languageInfo(paraNodeList, objValues, para_index) {
+    let docLanguages = getLanguage();
+    for (var j = 0; j < docLanguages.length; j++) {
+        /* Find the /para corresponding to language */
+        let paranum = findParanum(j, paraNodeList);
+        if (j == 0) {
+            /* If main language */
+            var editBtnText = " Edit ";
+            var allowEdit = "";
+            mainLangEdited = (paraNodeList[paranum]["@author"] != "") ? true : false;
+            var langstate = 'main';
+        }
+        else {
+            /* If sub languages */
+            var editBtnText = " Translate to ";
+            var allowEdit = mainLangEdited ? "" : "disabled";
+            var langstate = 'sub';
+            var backgroundTranslMissing = "background-image: url(\"./graphics/translation_needed.png\"); background-repeat:no-repeat; background-position:10% 50%;";
+            var backgroundImage = (paraNodeList[paranum]["@translator"] != "") ? "" : backgroundTranslMissing;
+        }
+        var language = paraNodeList[paranum]["@language"];
+        var langTag = getLanguageString(language);
+        var paraheading = paraNodeList[paranum]['heading'] || '';
+        var paratext = paraNodeList[paranum]['text'] || '';
 
-    var paraheading = paraNodeList[paranum]['heading'];
-    var paratext = paraNodeList[paranum]['text'];
-
-    /* Using a <blockquote> for displaying para text and a <textarea> for displaying the TinyMCE editor */
-    langArray[j] = language;
-    editorID[j] = "editor_" + language;
-    paraTextID[j] = "paratext_" + language;
-    textHtml = showParagraphInfoInEditor(textHtml, langTag, language, backgroundImage, allowEdit, editBtnText, paraheading, paraTextID, j, paratext, para_index, langstate, editorID);
-    return { langTag, textHtml };
+        /* Using a <blockquote> for displaying para text and a <textarea> for displaying the TinyMCE editor */
+        createParagraphInfoInEditorHtml(objValues, j, language, langTag, backgroundImage, allowEdit, editBtnText, paraheading, paratext, para_index, langstate);
+    }
 }
 
-function showParagraphInfoInEditor(textHtml, langTag, language, backgroundImage, allowEdit, editBtnText, paraheading, paraTextID, j, paratext, para_index, langstate, editorID) {
-    textHtml += `<div class='paradivEdit'>
+function createParagraphInfoInEditorHtml(objValues, j, language, langTag, backgroundImage, allowEdit, editBtnText, paraheading, paratext, para_index, langstate) {
+    objValues.langArray[j] = language;
+    objValues.editorID[j] = "editor_" + language;
+    objValues.paraTextID[j] = "paratext_" + language;
+    objValues.textHtml += `<div class='paradivEdit'>
 		<!--<p class='paralanguageEdit'>${langTag}</p>-->
 		<div  class='paratextEdit'>
 		<div id='paraTextArea_${language}' style='${backgroundImage}'>
 		<button type='button' id='editBtn_${language}' class='btn btn-primary btn-xs' ${allowEdit} style='margin:0px 0px 5px -10px;' onclick='htmlEditor("view" , "${language}","","" )' >
 		<span class='glyphicon glyphicon-pencil' aria-hidden='true'></span>${editBtnText}<strong>${langTag}</strong></button><br/>
 		<p class='paraheading' id='paraheading_${language}'>${decodeHtml(paraheading)}</p>
-		<blockquote id='${paraTextID[j]}' >${decodeHtml(paratext)}</blockquote>
+		<blockquote id='${objValues.paraTextID[j]}' >${decodeHtml(paratext)}</blockquote>
 		</div> <div id='htmlEditorArea_${language}'><div style='margin-bottom:5px;'>
 		<button type='button' id='saveBtn_${language}' class='btn btn-success btn-xs' onclick='htmlEditor("save" , "${language}"  , "${para_index}"  , "${langstate}" )' >
 		<span class='glyphicon glyphicon-ok' aria-hidden='true'></span> Keep Changes</button>
 		<button type='button' id='cancelBtn_${language}' class='btn btn-danger btn-xs' style='margin-left:10px;' onclick='htmlEditor("cancel" , "${language}" ,"","")' >
 		<span class='glyphicon glyphicon-remove' aria-hidden='true'></span> Forget</button>
 		</div><input type='text' class='form-control' id='newparaheading_${language}' placeholder='Heading' style='width:50%;margin-bottom:10px;' value='${decodeHtml(paraheading)}' />
-		<textarea name='content' id='${editorID[j]}' rows='10'  >${paratext}</textarea></div> </div></div>`;
-    return textHtml;
+		<textarea name='content' id='${objValues.editorID[j]}' rows='10'  >${paratext}</textarea></div> </div></div>`;
 }
 
-function getParNodeListInfo(paragraphsNodeList, para_index) {
+function findParanum(j, paraNodeList) {
+    let docLanguages = getLanguage();
+    for (var x = 0; x < paraNodeList.length; x++) {
+        if (paraNodeList[x]["@language"] == docLanguages[j]) {
+            return x
+        }
+    }
+    return -1
+}
+
+
+function getParagraphNodeList(paragraphsNodeList, para_index, objValues) {
     for (var j = 0; j < paragraphsNodeList.length; j++) {
-
         if (paragraphsNodeList[j]['@para_index'] == para_index) {
-            currentParagraph = paragraphsNodeList[j];
-
+            let currentParagraph = paragraphsNodeList[j];
             for (let z = 0; z < currentParagraph.revision.length; z++) {
                 if (currentParagraph.revision[z]['@state'] == 'draft') {
-                    draftRevision = currentParagraph.revision[z];
                     var draftRevision = currentParagraph["revision"][z];
-                    paraNodeList1 = currentParagraph["revision"][z].para;
-                    imageEditorContextworkRevision = draftRevision;
+                    objValues.draftRevision = draftRevision
+                    let paraNodeList1 = currentParagraph["revision"][z].para;
+                    objValues.paraNodeList1 = paraNodeList1;
+                    objValues.imageEditorContextworkRevision = draftRevision;
+                    getObjValues.imageEditorContextworkRevision = objValues.imageEditorContextworkRevision
+                    
                     break;
 
                 }
@@ -130,7 +134,6 @@ function getParNodeListInfo(paragraphsNodeList, para_index) {
 
                     /* If there is no revision in state='draft', the first revision is cloned, changed to 'draft' and inserted as first revision node */
                     var approvedRev = currentParagraph["revision"][z];
-                    console.log(approvedRev);
                     var clonedNode = { ...approvedRev };
                     clonedNode['@state'] = 'draft';
                     clonedNode['@approval_time'] = '';
@@ -148,15 +151,30 @@ function getParNodeListInfo(paragraphsNodeList, para_index) {
 
                     currentParagraph["revision"].unshift(clonedNode)
                     var draftRevision = currentParagraph["revision"][z];
-                    paraNodeList1 = currentParagraph["revision"][z].para;
-                    imageEditorContextworkRevision = draftRevision;
+                    objValues.draftRevision = draftRevision
+                    let paraNodeList1 = currentParagraph["revision"][z].para;
+                    objValues.paraNodeList1 = paraNodeList1;
+                    objValues.imageEditorContextworkRevision = draftRevision;
+                    getObjValues.imageEditorContextworkRevision = objValues.imageEditorContextworkRevision
+
+
                     break;
                 }
             }
         }
     }
-    return { draftRevision, j, i };
 }
+function initiValues() {
+
+    let objValues = {};
+    objValues.textHtml = '';
+    objValues.langTag = '';
+    objValues.editorID = new Array();
+    objValues.paraTextID = new Array();
+    objValues.langArray = new Array();
+    return objValues
+}
+
 
 function addImage() {
     document.getElementById('pictureFile').click();
@@ -190,27 +208,38 @@ function imageReplacement(evt) {
     var f = evt.target.files[0];
     handleSelectedFile(f, imageNodeReplaced);
 }
+let getObjValues =  () => {
+    let objValues = {};
+    objValues.imageEditorContextworkRevision = null;
+    return objValues
+}
+
 function handleSelectedFile(selectedFile, targetImage) {
-    var currentRevision = imageEditorContextworkRevision;
+    var currentRevision = getObjValues.imageEditorContextworkRevision;
     var documentRoot = currentRevision;
 
     var gallery = currentRevision["gallery"];
     /* Ensure that no whitespace is within the name  */
     var ImageFileStoredName = ("Fig" + (new Date()).getTime() + selectedFile.name).replace(/[^.,/\w]+/g, '');
     var textElement = ImageFileStoredName;
-    dstImageNode = targetImage;
+    var dstImageNode = targetImage;
 
     /* dstImageNode is that object we shall bind the image file to if it does not exist create it */
     if (!dstImageNode) {
         dstImageNode = documentRoot["image"];
         dstImageNode = textElement;
+        if (gallery == null || gallery == '') {
+            gallery = {};
+            gallery.image = [];
+            currentRevision["gallery"] = gallery;
+        }
         if (!Array.isArray(gallery["image"])) {
             let arr = [];
             arr.push(gallery["image"]);
             gallery["image"] = arr;
         }
         gallery["image"].unshift(dstImageNode);
-        console.log(documentRoot);
+
     } else {
         /* leave the element in place but change the the text node within */
         dstImageNode = textElement;
@@ -219,6 +248,7 @@ function handleSelectedFile(selectedFile, targetImage) {
     // read the specified file asynchronously and base64 encoded, result will include type information
     makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision, selectedFile);
 }
+
 function makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision, selectedFile) {
     var reader = new FileReader();
     reader.onload = async function () {
@@ -315,6 +345,7 @@ function replaceImage(replaceImageNode) {
 }
 /* remove from the psdoc */
 function removeImage(node) {
+     let imageEditorContextworkRevision =  getObjValues.imageEditorContextworkRevision
     if (!Array.isArray(imageEditorContextworkRevision.gallery['image'])) {
         let arr = [];
         arr.push(imageEditorContextworkRevision.gallery['image']);
@@ -322,9 +353,10 @@ function removeImage(node) {
 
     }
     for (let i = 0; i < imageEditorContextworkRevision.gallery['image'].length; i++) {
-        console.log(imageEditorContextworkRevision.gallery['image'][i])
+
         if (imageEditorContextworkRevision.gallery['image'][i].match(node)) {
             imageEditorContextworkRevision.gallery['image'].splice(i, 1);
+
         }
     }
     document.getElementById('workingGallery').innerHTML = workingGalleryHTML(imageEditorContextworkRevision["gallery"]);
