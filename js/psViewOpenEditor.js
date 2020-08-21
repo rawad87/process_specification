@@ -7,19 +7,15 @@ function viewParaForEdit(para_index) {
     getParagraphNodeList(paragraphsNodeList, para_index, objValues)
 
     /* Building the text parts of the paragraph */
-    let paraNodeList = objValues.paraNodeList1;
-    paraNodeList = checkIfNotArray(paraNodeList);
-    objValues.paraNodeList = paraNodeList;
+    
 
-    languageInfo(paraNodeList, objValues, para_index);
+    languageInfo(objValues, para_index);
     createEditorPanel(para_index);
 
     /* --- Building the image parts of the paragraph --- */
     editor(objValues, para_index);
 
-    for (var i = 0; i < objValues.langArray.length; i++) {
-        document.getElementById('htmlEditorArea_' + objValues.langArray[i]).style.display = "none";
-    }
+    getHtmlEditorArea(objValues);
     // listener for file select change handler 
     document.getElementById('pictureFile').addEventListener('change', imageSelected, false);
     document.getElementById('replacementPictureFile').addEventListener('change', imageReplacement, false);
@@ -31,7 +27,11 @@ function viewParaForEdit(para_index) {
 
 }
 
-
+function getHtmlEditorArea(objValues) {
+    for (var i = 0; i < objValues.langArray.length; i++) {
+        document.getElementById('htmlEditorArea_' + objValues.langArray[i]).style.display = "none";
+    }
+}
 
 function editor(objValues, para_index) {
     let imageHtml = workingGalleryHTML(objValues.draftRevision["gallery"]);
@@ -52,8 +52,11 @@ function createEditorPanel(para_index) {
     <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Remove <strong>Draft</strong></button></a></div></div>`;
 }
 
-function languageInfo(paraNodeList, objValues, para_index) {
+function languageInfo( objValues, para_index) {
     let docLanguages = getLanguage();
+    let paraNodeList = objValues.paraNodeList1;
+    paraNodeList = checkIfNotArray(paraNodeList);
+    objValues.paraNodeList = paraNodeList;
     for (var j = 0; j < docLanguages.length; j++) {
         /* Find the /para corresponding to language */
         let paranum = findParanum(j, paraNodeList);
@@ -164,6 +167,7 @@ function getParagraphNodeList(paragraphsNodeList, para_index, objValues) {
         }
     }
 }
+
 function initiValues() {
 
     let objValues = {};
@@ -361,3 +365,4 @@ function removeImage(node) {
     }
     document.getElementById('workingGallery').innerHTML = workingGalleryHTML(imageEditorContextworkRevision["gallery"]);
 }
+
