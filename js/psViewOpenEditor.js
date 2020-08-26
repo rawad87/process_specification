@@ -1,19 +1,21 @@
 
+function viewEditor(para_index) {
+    viewParaForEdit(para_index);
+    document.getElementById('paragraphs').style.display = "none";
+    document.getElementById('editor').style.display = "";
+}
 function viewParaForEdit(para_index) {
-
     /* Building the html content for the editor area */
     let paragraphsNodeList = getProcSpec().content.paragraph;
     let objValues = initiValues();
     getParagraphNodeList(paragraphsNodeList, para_index, objValues)
 
     /* Building the text parts of the paragraph */
-    
-
     languageInfo(objValues, para_index);
     createEditorPanel(para_index);
 
     /* --- Building the image parts of the paragraph --- */
-    editor(objValues, para_index);
+    editor(objValues);
 
     getHtmlEditorArea(objValues);
     // listener for file select change handler 
@@ -29,14 +31,15 @@ function viewParaForEdit(para_index) {
 
 function getHtmlEditorArea(objValues) {
     for (var i = 0; i < objValues.langArray.length; i++) {
-        document.getElementById('htmlEditorArea_' + objValues.langArray[i]).style.display = "none";
+        document.getElementById(`htmlEditorArea_${objValues.langArray[i]}`).style.display = "none";
     }
 }
 
-function editor(objValues, para_index) {
+function editor(objValues) {
+    let paragraphsNodeList = getProcSpec().content.paragraph;
+    console.log(paragraphsNodeList);
     let imageHtml = workingGalleryHTML(objValues.draftRevision["gallery"]);
     let html = `<div class="paragraphEdit">${editorpanel}
-    <!--<p class="paralanguageEdit">Index ${para_index}</p>-->
     ${objValues.textHtml}<div class="paraimagesEdit">${imageHtml}</div></div>`;
     document.getElementById('editor').innerHTML = html;
 }
@@ -52,10 +55,10 @@ function createEditorPanel(para_index) {
     <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Remove <strong>Draft</strong></button></a></div></div>`;
 }
 
-function languageInfo( objValues, para_index) {
+function languageInfo(objValues, para_index) {
     let docLanguages = getLanguage();
     let paraNodeList = objValues.paraNodeList1;
-    paraNodeList = checkIfNotArray(paraNodeList);
+    paraNodeList = checkIfNotArrayMakeArray(paraNodeList);
     objValues.paraNodeList = paraNodeList;
     for (var j = 0; j < docLanguages.length; j++) {
         /* Find the /para corresponding to language */
@@ -123,49 +126,55 @@ function getParagraphNodeList(paragraphsNodeList, para_index, objValues) {
             let currentParagraph = paragraphsNodeList[j];
             for (let z = 0; z < currentParagraph.revision.length; z++) {
                 if (currentParagraph.revision[z]['@state'] == 'draft') {
-                    var draftRevision = currentParagraph["revision"][z];
-                    objValues.draftRevision = draftRevision
-                    let paraNodeList1 = currentParagraph["revision"][z].para;
-                    objValues.paraNodeList1 = paraNodeList1;
-                    objValues.imageEditorContextworkRevision = draftRevision;
-                    getObjValues.imageEditorContextworkRevision = objValues.imageEditorContextworkRevision
-                    
+                    var draftRevision = getCurrentParagrphRevision(currentParagraph, z, objValues);
                     break;
 
                 }
                 else {
-
                     /* If there is no revision in state='draft', the first revision is cloned, changed to 'draft' and inserted as first revision node */
-                    var approvedRev = currentParagraph["revision"][z];
-                    var clonedNode = { ...approvedRev };
-                    clonedNode['@state'] = 'draft';
-                    clonedNode['@approval_time'] = '';
-                    clonedNode['@approver'] = '';
-                    //clonedNode.setAttribute('author', userIndex);
-                    var clonedParaNodeList = clonedNode.para;
-                    for (var i = 0; i < clonedParaNodeList.length; i++) {
-                        clonedParaNodeList[i]['@author'] = '';
-                        clonedParaNodeList[i]['@translator'] = '';
-                    }
-
-                    clonedNode["changelog"] = '';
-                    var dateObj = new Date();
-                    clonedNode['@rev_index'] = dateObj.getTime();
-
-                    currentParagraph["revision"].unshift(clonedNode)
-                    var draftRevision = currentParagraph["revision"][z];
-                    objValues.draftRevision = draftRevision
-                    let paraNodeList1 = currentParagraph["revision"][z].para;
-                    objValues.paraNodeList1 = paraNodeList1;
-                    objValues.imageEditorContextworkRevision = draftRevision;
-                    getObjValues.imageEditorContextworkRevision = objValues.imageEditorContextworkRevision
-
-
+                    var draftRevision = cloneFirstRevision(currentParagraph, z, draftRevision, objValues);
                     break;
                 }
             }
         }
     }
+}
+
+function cloneFirstRevision(currentParagraph, z, draftRevision, objValues) {
+    var approvedRev = currentParagraph["revision"][z];
+    var clonedNode = { ...approvedRev };
+    clonedNode['@state'] = 'draft';
+    clonedNode['@approval_time'] = '';
+    clonedNode['@approver'] = '';
+    //clonedNode.setAttribute('author', userIndex);
+    var clonedParaNodeList = clonedNode.para;
+    for (var i = 0; i < clonedParaNodeList.length; i++) {
+        clonedParaNodeList[i]['@author'] = '';
+        clonedParaNodeList[i]['@translator'] = '';
+    }
+
+    clonedNode["changelog"] = '';
+    var dateObj = new Date();
+    clonedNode['@rev_index'] = dateObj.getTime();
+
+    currentParagraph["revision"].unshift(clonedNode);
+    var draftRevision = currentParagraph["revision"][z];
+    objValues.draftRevision = draftRevision;
+    let paraNodeList1 = currentParagraph["revision"][z].para;
+    objValues.paraNodeList1 = paraNodeList1;
+   // objValues.imageEditorContextworkRevision = draftRevision;
+    getObjValues.imageEditorContextworkRevision = draftRevision;
+    return draftRevision;
+}
+
+function getCurrentParagrphRevision(currentParagraph, z, objValues) {
+    var draftRevision = currentParagraph["revision"][z];
+    objValues.draftRevision = draftRevision;
+    let paraNodeList1 = currentParagraph["revision"][z].para;
+    objValues.paraNodeList1 = paraNodeList1;
+  //  objValues.imageEditorContextworkRevision = draftRevision;
+    getObjValues.imageEditorContextworkRevision = draftRevision;
+    return draftRevision;
 }
 
 function initiValues() {
@@ -197,11 +206,7 @@ function handleDragOver(evt) {
     evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 
-function viewEditor(para_index) {
-    viewParaForEdit(para_index);
-    document.getElementById('paragraphs').style.display = "none";
-    document.getElementById('editor').style.display = "";
-}
+
 function imageSelected(evt) {
     var files = evt.target.files;
     for (var i = 0, f; f = files[i]; i++) {
@@ -212,7 +217,7 @@ function imageReplacement(evt) {
     var f = evt.target.files[0];
     handleSelectedFile(f, imageNodeReplaced);
 }
-let getObjValues =  () => {
+let getObjValues = () => {
     let objValues = {};
     objValues.imageEditorContextworkRevision = null;
     return objValues
@@ -237,12 +242,8 @@ function handleSelectedFile(selectedFile, targetImage) {
             gallery.image = [];
             currentRevision["gallery"] = gallery;
         }
-        if (!Array.isArray(gallery["image"])) {
-            let arr = [];
-            arr.push(gallery["image"]);
-            gallery["image"] = arr;
-        }
-        gallery["image"].unshift(dstImageNode);
+        gallery.image = checkIfNotArrayMakeArray(gallery.image)
+        gallery.image.push(dstImageNode);
 
     } else {
         /* leave the element in place but change the the text node within */
@@ -254,6 +255,7 @@ function handleSelectedFile(selectedFile, targetImage) {
 }
 
 function makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision, selectedFile) {
+   
     var reader = new FileReader();
     reader.onload = async function () {
         var dataURL = reader.result;
@@ -273,16 +275,16 @@ function makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision,
         if (!targetImage) {
             document.getElementById("dropZoneDiv").style.display = 'none';
             document.getElementById("dropZoneContainer").appendChild(previewPic);
+            
         }
-        await dataAccess.saveImage(ImageFileStoredName, dataURL);
-        redrawGallery(currentRevision["gallery"]);
+       // await dataAccess.saveImage(ImageFileStoredName, dataURL);
+        let paragraphsNodeList = getProcSpec().content.paragraph;
+        console.log(paragraphsNodeList);
+        document.getElementById('workingGallery').innerHTML = workingGalleryHTML(currentRevision.gallery)
     };
     reader.readAsDataURL(selectedFile);
 }
 
-function redrawGallery(currentRevision) {
-    document.getElementById('workingGallery').innerHTML = workingGalleryHTML(currentRevision);
-}
 
 function htmlEditor(state, language, para_index, langstate) {
     /* Viewing the editor on a specified place (editorarea) */
@@ -324,7 +326,6 @@ function htmlEditor(state, language, para_index, langstate) {
             document.getElementById('backToPSBtn').style.display = '';
             document.getElementById('removeDraftBtn').style.display = '';
             $('[id ^=editBtn_]').show();
-
             saveDraft(para_index, language, langstate);
             viewParaForEdit(para_index);
             break;
@@ -343,24 +344,20 @@ function initEditor(e) {
         file_browser_callback_types: 'image'
     });
 }
+
 function replaceImage(replaceImageNode) {
     imageNodeReplaced = replaceImageNode;
     return function () { document.getElementById('replacementPictureFile').click(); }();
 }
 /* remove from the psdoc */
 function removeImage(node) {
-     let imageEditorContextworkRevision =  getObjValues.imageEditorContextworkRevision
-    if (!Array.isArray(imageEditorContextworkRevision.gallery['image'])) {
-        let arr = [];
-        arr.push(imageEditorContextworkRevision.gallery['image']);
-        imageEditorContextworkRevision.gallery['image'] = arr;
-
-    }
+    let imageEditorContextworkRevision = getObjValues.imageEditorContextworkRevision
+    imageEditorContextworkRevision.gallery['image'] = checkIfNotArrayMakeArray(imageEditorContextworkRevision.gallery['image'])
     for (let i = 0; i < imageEditorContextworkRevision.gallery['image'].length; i++) {
-
         if (imageEditorContextworkRevision.gallery['image'][i].match(node)) {
             imageEditorContextworkRevision.gallery['image'].splice(i, 1);
-
+            console.log(imageEditorContextworkRevision.gallery['image'])
+            break
         }
     }
     document.getElementById('workingGallery').innerHTML = workingGalleryHTML(imageEditorContextworkRevision["gallery"]);

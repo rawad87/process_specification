@@ -23,54 +23,18 @@ function encodHtml(encodedStr) {
 }
 
 function encodeXml(xml) {
-    return (xml
+    return xml
         .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
         .replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/\t/g, '&#x9;').replace(/\n/g, '&#xA;').replace(/\r/g, '&#xD;')
-    );
+        .replace(/\t/g, '&#x9;').replace(/\n/g, '&#xA;').replace(/\r/g, '&#xD;');
 }
 function encodeXml2(xml) {
     return (xml
-        .replace('&amp;', '&' ).replace( '&quot;', '"').replace('&apos;', '/')
-        .replace('&lt;' , '<' ).replace('&gt;', '>')
-        .replace( '&#x9;', 't').replace('&#xA;' , 'n').replace('&#xD;' ,'r')
+        .replace('&amp;', '&').replace('&quot;', '"').replace('&apos;', '/')
+        .replace('&lt;', '<').replace('&gt;', '>')
+        .replace('&#x9;', 't').replace('&#xA;', 'n').replace('&#xD;', 'r')
     );
 }
- function objectFromXmlText (xmlText) {
-    let dom = parseXml(xmlText);
-    let json = xml2json(dom).replace('undefined', '');
-    return JSON.parse(json);
-}
-function parseXml(xml) {
-    var dom = null;
-    if (window.DOMParser) {
-        try {
-            dom = (new DOMParser()).parseFromString(xml, "text/xml");
-        }
-        catch (e) { dom = null; }
-    }
-    else if (window.ActiveXObject) {
-        try {
-            dom = new ActiveXObject('Microsoft.XMLDOM');
-            dom.async = false;
-            if (!dom.loadXML(xml)) // parse error ..
-
-                window.alert(dom.parseError.reason + dom.parseError.srcText);
-        }
-        catch (e) { dom = null; }
-    }
-    else
-        alert("cannot parse xml string!");
-    return dom;
-}
- function jsonObjToXmlTest(obj) {
-     let jsonText = JSON.stringify(obj);
-	return  json2xml(jsonText);
-	
-	
-      
-}
-
 function decodeHtml(html) {
     var txt = document.createElement("textarea");
     txt.innerHTML = html;
@@ -146,24 +110,22 @@ function getUserFName() {
     const userName = appContext.model.userName;
     return userName["exist:result"].users;
 }
-
-
 function checkDocNode() {
-	var documentsNode = document.getElementById('paragraphs');
-	if (!documentsNode.hasChildNodes()) {
-		document.getElementById('paragraph_new_button').style.display = "";
-	}
+    var documentsNode = document.getElementById('paragraphs');
+    if (!documentsNode.hasChildNodes()) {
+        document.getElementById('paragraph_new_button').style.display = "";
+    }
 }
 function getRemoveParIndexId() {
-	return document.getElementById('remove_para_index').innerHTML;
+    return document.getElementById('remove_para_index').innerHTML;
 }
-function getTimestamp () {
-	var dateObj = new Date();
-	var timestamp = dateObj.getTime();
-	return timestamp;
+function getTimestamp() {
+    var dateObj = new Date();
+    var timestamp = dateObj.getTime();
+    return timestamp;
 }
 function getLanguageString(language) {
-    var languagesNameArray = {en:'English', no:'Norwegian', lt:'Lithuanian'};
+    var languagesNameArray = { en: 'English', no: 'Norwegian', lt: 'Lithuanian' };
     switch (language) {
         case 'no':
             langTag = languagesNameArray.no;
@@ -176,26 +138,34 @@ function getLanguageString(language) {
     }
     return langTag;
 }
+function GetToolTip() {
+    $(document).ready(function () {
+        $("body").tooltip({ selector: '[data-toggle=tooltip]' });
+    });
+}
+
 function workingGalleryHTML(workRevision) {
     var galleryTableCols = 2;
     var j = 0;
-    result = "<div id='workingGallery'>";
-    if(workRevision == null || workRevision == ''){
+    let result = "<div id='workingGallery'>";
+    if (workRevision == null || workRevision == '') {
         workRevision = {}
         workRevision.image = [];
 
     }
-    imageNodeList = workRevision.image;
+    let imageNodeList = workRevision.image;
     console.log(imageNodeList)
-    result += "<table border='1' frame='void' rules='all' > ";
-    result += "<tr><td  id='dropZoneContainer'class='galleryEditorImageContainer'><div id='dropZoneDiv'onclick='addImage();' class='paraimageEdit uploadDropZone'>Add image file</div></td>";
+    result += `<table border='1' frame='void' rules='all' > 
+              <tr><td  id='dropZoneContainer'class='galleryEditorImageContainer'> 
+              <div id='dropZoneDiv'onclick='addImage();' class='paraimageEdit uploadDropZone'>Add image file</div></td>`;
     if (!Array.isArray(imageNodeList)) {
         let arr = []
         arr.push(imageNodeList);
         imageNodeList = arr;
     }
+    imageNodeList =  checkIfNotArrayMakeArray(imageNodeList)
     while (j < imageNodeList.length) {
-        imageNode = imageNodeList[j];
+       let  imageNode = imageNodeList[j];
         // imageFilename = imageNode.firstChild.nodeValue;
         if (j % galleryTableCols == 0) {
             result += "<tr>";
@@ -206,9 +176,9 @@ function workingGalleryHTML(workRevision) {
        <img ondragstart='dragStartImageEditor(event)' ondragover='imageEditorAllowDrop(event)' ondrop='dropImageEditor(event)'  draggable='true'  title='${imageTitleRoot(j)}' 
         id='ImgIndex:${j}' src='${imagerepo1}'  alt='' class='paraimageEdit' />
        <span class='galleryEditorControls'>
-       <button title='Delete image'  onClick='removeImage(imageNodeList[${j}])' type='button' class='btn btn-danger btn-xs'>
+       <button title='Delete image'  onClick='removeImage(${this.j})' type='button' class='btn btn-danger btn-xs'>
        <span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button>
-       <button title='Replace image' onClick='replaceImage(imageNodeList[${j}]);' type='button' class='btn btn-primary btn-xs'>
+       <button title='Replace image' onClick='replaceImage(${this.j});' type='button' class='btn btn-primary btn-xs'>
        <span class='glyphicon glyphicon-import' aria-hidden='true'></span></button>
        </span>
        </td>`;
@@ -217,16 +187,14 @@ function workingGalleryHTML(workRevision) {
             result += "</tr>";
         }
     }
-    result += "</table>";
-    result += "</div>";
+    result += `</table></div>`;
     return result;
 }
-function checkIfNotArray(ElemetnToCheck) {
+function checkIfNotArrayMakeArray(ElemetnToCheck) {
     if (!Array.isArray(ElemetnToCheck)) {
         let arr = [];
         arr.push(ElemetnToCheck);
         ElemetnToCheck = arr;
-        console.log(ElemetnToCheck);
     }
     return ElemetnToCheck;
 }
