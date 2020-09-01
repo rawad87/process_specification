@@ -1,18 +1,11 @@
- function updateViewProcessSpecification() {
 
+
+
+function updateViewProcessSpecification() {
+    console.log('new version')
     const procSpec = getProcSpec();
-    let x = appContext.model.document['exist:result'].process_specification;
-    let del = delete appContext.model.document['exist:result'].process_specification.biblioid["#comment"];
-   // console.log(del);
-    let xmlDOM =  json2xml(x);
-    let encode = encodeXml2(xmlDOM);
-    let y = decodeHtml(encode)
-   // console.log(`<process_specification>${y}</process_specification>`);
-
-    // let x = JSON.stringify(procSpec)
-    // console.log(x)
     const dateString = dateFormat(parseInt(procSpec.info.last_updated));
-
+    let docnum = procSpec.biblioid.docnum;
     let exNodeValue = procSpec.info.ex;
     let exDoc = (exNodeValue == 'true') ? "EX document" : "Standard PS";
 
@@ -20,10 +13,16 @@
     let type = (typeNodeValue.toLowerCase() == 'assembly') ? "Assembly" : "Test";
     let userIndex = procSpec.info.author;
     let docauthor = (userIndex == '') ? '' : getUserFullname(userIndex);
-
+    var langValue = '';
+    GetToolTip();
+    var lan_states = ["", "", ""];
+    let languagesArray = ['en', 'no', 'lt'];
+    for (var i = 0; i < lan_states.length; i++) {
+        langValue = langValue + ((lan_states[i] == "") ? '-' + languagesArray[i] : '');
+    };
     document.getElementById('app').innerHTML = `
     <div class="panel panel-primary" style="margin-bottom: 10px; ">
-    <div class="panel-heading" id="panel-heading" style="font-size: 20px; font-weight: bold">Process Specification </div>
+    <div class="panel-heading" id="panel-heading" style="font-size: 20px; font-weight: bold">Process Specification : ${docnum}</div>
 
     <table class="table table-condensed">
         <tr>
@@ -42,19 +41,21 @@
             <td>${dateString}</td>
             <td>${exDoc}</td>
             <td>${type}</td>
-            <td><a onclick="viewDocProperties('false')"><span class="glyphicon glyphicon-list-alt" style="cursor:pointer" aria-hidden="true"></span></a></td>
-            <td id="psPrintLink"><a href='pspec_print.php?psnum=" + docnum + "&languages=" + langValue + "' target='_blank'><span class='glyphicon glyphicon-print' style='cursor:pointer' aria-hidden='true'></span></a></td>
+            <td><a onclick="viewDocProperties('false')"><span class="glyphicon glyphicon-list-alt" style="cursor:pointer"data-toggle="tooltip" title="Document Properties" aria-hidden="true"></span></a></td>
+            <td id="psPrintLink"><a href="pspec_print.php?psnum=${docnum}&languages= ${langValue}"  target="_blank" data-toggle="tooltip" title="Print">
+            <span class='glyphicon glyphicon-print' style='cursor:pointer' aria-hidden='true'></span></a></td>
         </tr></table>
     </div>
     
-    <h3>${procSpec.info.title}</h3>
-    <h4>${ procSpec.info.subtitle}</h4>
+    <h3>${chceckNullValue(procSpec.info.title)}</h3>
+    <h4>${chceckNullValue( procSpec.info.subtitle)}</h4>
     ${flags()}  
     ${documentProperties()} 
     ${modalConfirmRemovePara()} 
-    ${modelApprovalParagraph()}`;
+    ${modelApprovalParagraph()} `;
     viewParagraphs()
 }
+
 
 function flags() {
     return `
@@ -113,7 +114,12 @@ function viewParagraphs() {
     let contentHTML = '';
 
     let paragraphsNodeList = getProcSpec().content.paragraph.filter(p => p["@state"] == 'active');
+
     for (let i = 0; i < paragraphsNodeList.length; i++) {
+
+        if (paragraphsNodeList[i].revision == undefined || paragraphsNodeList[i].revision == '') {
+            paragraphsNodeList.splice(i, 1)
+        }
         contentHTML += createHtmlForOneParagraph(i, paragraphsNodeList);
     }
 
@@ -122,12 +128,28 @@ function viewParagraphs() {
     document.getElementById('editor').style.display = "none";
 }
 
+function makeArrayIfElementNotArray() {
+    if (!Array.isArray(getProcSpec().content.paragraph)) {
+        let arr = [];
+        arr.push(getProcSpec().content.paragraph);
+        getProcSpec().content.paragraph = arr;
+    }
+}
+
 function createHtmlForOneParagraph(i, paragraphsNodeList) {
     let viewParaNum = i + 1;
     let para_index = paragraphsNodeList[i]["@para_index"];
+    if (!Array.isArray(paragraphsNodeList[i].revision)) {
+        let arr = [];
+        arr.push(paragraphsNodeList[i].revision);
+        paragraphsNodeList[i].revision = arr;
+    }
     let revisionsNodeList = paragraphsNodeList[i].revision;
     let currentParagraph = getLastApprovedParagraph(revisionsNodeList);
+
+    //getLastApprovedParagraph(revisionsNodeList);
     let rev_index = currentParagraph["@rev_index"];
+
     let revisionRows = revisionTableBody(para_index, rev_index);
     let paraNodeList = currentParagraph.para;
     getTexts(paraNodeList, para_index, currentParagraph);
@@ -143,17 +165,27 @@ function createHtmlForOneParagraph(i, paragraphsNodeList) {
     return `<div class='paragraph' id='paraindex_${para_index}'>${paragrahpNum} 
                 <div class='row'></div>${editionsTable} ${textHtml} ${completeImageHtml} </div>`;
 }
+
 function getLastApprovedParagraph(revisionsNodeList) {
     let approvedNodeIndex = '0';
     let currentParagraph = '';
+
+    if (!Array.isArray(revisionsNodeList)) {
+        if (revisionsNodeList["@state"] == 'approved') {
+            currentParagraph = revisionsNodeList
+        }
+        return currentParagraph;
+    }
     for (let r = 0; r < revisionsNodeList.length; r++) {
+
         if (revisionsNodeList[r]["@state"] == 'approved') {
             approvedNodeIndex = r;
         }
         currentParagraph = revisionsNodeList[approvedNodeIndex];
     }
-    return currentParagraph;
+    return currentParagraph
 }
+
 function getTexts(paraNodeList, para_index, currentParagraph) {
     textHtml = "";
     let docLanguages = getLanguage();
@@ -162,15 +194,18 @@ function getTexts(paraNodeList, para_index, currentParagraph) {
         let backgroundTranslMissing = "";
         let backgroundImage = "";
         let paranum = 0;
-        //console.log(paraNodeList);
-        paraNodeList.forEach((paraNodeList, x) => paraNodeList["@language"] == docLanguages[j] ? paranum = x : '')
+
+        paraNodeList.forEach((paraNodeList, x) => paraNodeList["@language"] == docLanguages[j] ? paranum = x : '');
+
 
         let language = paraNodeList[paranum]["@language"];
         if (j == 0) {
             let textauthor = paraNodeList[paranum]["@author"];
+
             textauthor = isNumber(textauthor) ? getUserFullname(textauthor) : textauthor;
+
             var editedBy = `- <code id='para_author_${para_index} _ ${language}'>Author: ${textauthor["#text"]}  </code>`;
-            if(textauthor == '')editedBy = `- <code id='para_author_${para_index} _ ${language}'>Author:   </code>` ;
+            if (textauthor == '') editedBy = `- <code id='para_author_${para_index} _ ${language}'>Author:   </code>`;
             revDraftMode = "background-image: url(\"./graphics/draft_mode.png\"); background-repeat:no-repeat; background-position:10% 50%;";
             backgroundImage = (currentParagraph["@state"] != "draft") ? "" : revDraftMode;
         }
@@ -178,13 +213,13 @@ function getTexts(paraNodeList, para_index, currentParagraph) {
             var texttranslator = paraNodeList[paranum]["@translator"];
             texttranslator = isNumber(texttranslator) ? getUserFullname(texttranslator) : texttranslator;
             var editedBy = `- <code id='para_author_${para_index} _ ${language}'>Translator: ${texttranslator["#text"]}</code>`;
-            if(texttranslator =='')editedBy = `- <code id='para_author_${para_index} _ ${language}'>Translator: </code>`;
+            if (texttranslator == '') editedBy = `- <code id='para_author_${para_index} _ ${language}'>Translator: </code>`;
             backgroundTranslMissing = "background-image: url(\"./graphics/translation_needed.png\"); background-repeat:no-repeat; background-position:10% 50%;";
             backgroundImage = (paraNodeList[paranum]["@translator"] != "") ? "" : backgroundTranslMissing;
         }
 
         let paraheading = paraNodeList[paranum]["heading"] ? paraNodeList[paranum]["heading"] : '-';
-        let paratext = paraNodeList[paranum]["text"] ?paraNodeList[paranum]["text"] : '';
+        let paratext = paraNodeList[paranum]["text"] ? paraNodeList[paranum]["text"] : '';
         textHtml += textHtmlPar(language, para_index, paraheading, editedBy, backgroundImage, paratext);
 
     }
@@ -202,7 +237,6 @@ function textHtmlPar(language, para_index, paraheading, editedBy, backgroundImag
      </div> `;
 
 }
-
 function editBtnsFun(para_index, revisionRows, editBtns) {
     return `
     <div class='row'>
@@ -266,27 +300,23 @@ function viewParaEditionsTable(para_index) {
 function galleryHTML(paragraphRevision) {
     result = "";
     index = 0;
-    try{  imageNodeList = paragraphRevision.gallery.image;}
-    catch(err){
-      imageNodeList = '';
+    if (paragraphRevision.gallery == null || paragraphRevision.gallery == '') {
+        paragraphRevision.gallery = {};
+        paragraphRevision.gallery.image = [];
+        paragraphRevision.gallery.image = paragraphRevision.gallery.image;
     }
-    if (!Array.isArray(imageNodeList)) {
-        imageFilename = encodeURI(imageNodeList);
-        imageTitle = imageTitleRoot(index);
-        result += `<a href='http://trondoc.jotron.inet/ps_images/${imageFilename}'  class='highslide' onclick='return hs.expand(this)' title= '${imageTitle}'  style='margin: 0 0 10px 15px'>
-         <img src= 'http://trondoc.jotron.inet/ps_images/${imageFilename}' alt='' class='paraimage' /></a>`;
-    } else {
-        for (var j = 0; j < imageNodeList.length; j++) {
-            // image = imageNodeList[j];
-            if (!Array.isArray(imageNodeList)) {
-                imageFilename = encodeURI(imageNodeList);
-            }
-            imageFilename = encodeURI(imageNodeList[j]);
-            imageTitle = imageTitleRoot(j);
-            result += `<a href='http://trondoc.jotron.inet/ps_images/${imageFilename}'  class='highslide' onclick='return hs.expand(this)' title= '${imageTitle}'  style='margin: 0 0 10px 15px'>
-            <img src= 'http://trondoc.jotron.inet/ps_images/${imageFilename}' alt='' class='paraimage' /></a>`;
-
+    imageNodeList = paragraphRevision.gallery.image;
+    imageNodeList = checkIfNotArrayMakeArray(imageNodeList)
+    for (var j = 0; j < imageNodeList.length; j++) {
+        if (!Array.isArray(imageNodeList)) {
+            imageFilename = encodeURI(imageNodeList);
         }
+        imageFilename = encodeURI(imageNodeList[j]);
+        imageTitle = imageTitleRoot(j);
+        result += `<a href='http://trondoc.jotron.inet/ps_images/${imageFilename}'  class='highslide' onclick='return hs.expand(this)' title= '${imageTitle}'
+                   style='margin: 0 0 10px 15px'>
+                   <img src= 'http://trondoc.jotron.inet/ps_images/${imageFilename}' alt='' class='paraimage' /></a>`;
+
     }
     return result;
 }
@@ -332,7 +362,11 @@ function getRevisionNodes(revisionNodes, selected_rev_index, para_index, revisio
 function getTableInfo(changelog, revisionNodes, j) {
     changelog = revisionNodes[j]["changelog"] ? revisionNodes[j]["changelog"] : '';
     var userIndex = revisionNodes[j]["@approver"];
-    let approver = (userIndex != '') ? getUserFullname(userIndex) : '';
+    if (userIndex != '') {
+        var approver = isNumber(userIndex) ? getUserFullname(userIndex) : userIndex;
+
+    }
+    else { var approver = ''; }
     var state = revisionNodes[j]["@state"];
     var rev_index = parseInt(revisionNodes[j]["@rev_index"]);
     var approval_time = parseInt(revisionNodes[j]["@approval_time"]);
@@ -466,20 +500,26 @@ function getPsTypeInputs(isNewDoc, checkedState, psTypeOpt, disabledState, psTyp
             var checkedState = ($('#info_type').text() == psTypeOpt[i]) ? 'checked' : '';
         }
         var disabledState = 'enabled';
-        psTypeInputs = psTypeInputs + "<td><input type='radio' onclick='setTitleInDocPropertiesModal(this.value)' name='psTypeRadioBtn' value='" + psTypeArray[i] + "' " + checkedState + " " + disabledState + " > " + psTypeArray[i] + "</td>";
+        psTypeInputs += `<td><input type='radio' onclick='setTitleInDocPropertiesModal(this.value)' name='psTypeRadioBtn' value='${psTypeArray[i]}' ${checkedState} ${disabledState} > ${psTypeArray[i]}</td>`;
+
     }
     return { checkedState, disabledState, psTypeInputs };
 }
+function setTitleInDocPropertiesModal(pskind) {
+    var titleword = (pskind == 'test') ? 'Test' : 'Assembly';
+    document.getElementById('titleInput').value = `${titleword} of X-${callerModuleNum} "${callerModuleName}"`;
+}
+
 
 function getLanguagesArray(mainlang, mainLangInputs, sublang, subLangInputs) {
     let languagesArray = ['en', 'no', 'lt'];
     for (var i = 0; i < languagesArray.length; i++) {
         var checkedState = (mainlang == languagesArray[i]) ? 'checked' : '';
         var disabledState = (i > 0) ? 'disabled' : 'enabled';
-        mainLangInputs = mainLangInputs + "<td><input type='radio' name='mainLangRadioBtn' value='" + languagesArray[i] + "' " + checkedState + " " + disabledState + " > " + languagesArray[i] + "</td>";
+        mainLangInputs += `<td><input type='radio' name='mainLangRadioBtn' value='${languagesArray[i]}' ${checkedState} ${disabledState} > ${languagesArray[i]}</td>`;
         if (i > 0) {
             var checkedState = (sublang.indexOf(languagesArray[i]) != -1) ? 'checked' : '';
-            subLangInputs = subLangInputs + "<td><input type='checkbox' name='subLangChkBtn' value='" + languagesArray[i] + "' " + checkedState + " > " + languagesArray[i] + "</td>";
+            subLangInputs += `<td><input type='checkbox' name='subLangChkBtn' value='${languagesArray[i]}' ${checkedState} > ${languagesArray[i]}</td>`;
         }
     }
     return { checkedState, disabledState, mainLangInputs, subLangInputs };
@@ -499,7 +539,7 @@ function exInp(exTrueChecked, exFalseChecked) {
                 </form></tr>`;
     return exInputs
 }
-function modalConfirmRemovePara(){
+function modalConfirmRemovePara() {
     return `		<div class="modal fade" id="confirmRemoveModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -519,14 +559,14 @@ function modalConfirmRemovePara(){
   </div>`
 }
 
-function confirmRemoveParagraph (para_index) {
-	//modalConfirmRemovePara()
-	var displayRemoveBtn = canApproveParagraph() ? "" : "none";
-	document.getElementById("paraRemoveBtn").style.display= displayRemoveBtn;
-	document.getElementById('remove_para_index').innerHTML = para_index;
-	$('#confirmRemoveModal').modal('show');
+function confirmRemoveParagraph(para_index) {
+    //modalConfirmRemovePara()
+    var displayRemoveBtn = canApproveParagraph() ? "" : "none";
+    document.getElementById("paraRemoveBtn").style.display = displayRemoveBtn;
+    document.getElementById('remove_para_index').innerHTML = para_index;
+    $('#confirmRemoveModal').modal('show');
 }
-function modelApprovalParagraph(){
+function modelApprovalParagraph() {
     return `<div class="modal fade" id="revisionsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">

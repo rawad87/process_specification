@@ -143,29 +143,23 @@ function GetToolTip() {
         $("body").tooltip({ selector: '[data-toggle=tooltip]' });
     });
 }
-
 function workingGalleryHTML(workRevision) {
     var galleryTableCols = 2;
     var j = 0;
-    let result = "<div id='workingGallery'>";
+
     if (workRevision == null || workRevision == '') {
         workRevision = {}
         workRevision.image = [];
 
     }
-    let imageNodeList = workRevision.image;
-    console.log(imageNodeList)
-    result += `<table border='1' frame='void' rules='all' > 
-              <tr><td  id='dropZoneContainer'class='galleryEditorImageContainer'> 
-              <div id='dropZoneDiv'onclick='addImage();' class='paraimageEdit uploadDropZone'>Add image file</div></td>`;
-    if (!Array.isArray(imageNodeList)) {
-        let arr = []
-        arr.push(imageNodeList);
-        imageNodeList = arr;
-    }
-    imageNodeList =  checkIfNotArrayMakeArray(imageNodeList)
+
+    let result = `<div id='workingGallery'>
+    <table border='1' frame='void' rules='all' > 
+    <tr><td  id='dropZoneContainer'class='galleryEditorImageContainer'><div id='dropZoneDiv'onclick='addImage();' class='paraimageEdit uploadDropZone'>Add image file</div></td>`;
+    imageNodeList = workRevision.image;
+    imageNodeList = checkIfNotArrayMakeArray(imageNodeList)
     while (j < imageNodeList.length) {
-       let  imageNode = imageNodeList[j];
+        let imageNode = imageNodeList[j];
         // imageFilename = imageNode.firstChild.nodeValue;
         if (j % galleryTableCols == 0) {
             result += "<tr>";
@@ -176,9 +170,9 @@ function workingGalleryHTML(workRevision) {
        <img ondragstart='dragStartImageEditor(event)' ondragover='imageEditorAllowDrop(event)' ondrop='dropImageEditor(event)'  draggable='true'  title='${imageTitleRoot(j)}' 
         id='ImgIndex:${j}' src='${imagerepo1}'  alt='' class='paraimageEdit' />
        <span class='galleryEditorControls'>
-       <button title='Delete image'  onClick='removeImage(${this.j})' type='button' class='btn btn-danger btn-xs'>
+       <button title='Delete image'  onClick='removeImage(imageNodeList[${j}])' type='button' class='btn btn-danger btn-xs'>
        <span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button>
-       <button title='Replace image' onClick='replaceImage(${this.j});' type='button' class='btn btn-primary btn-xs'>
+       <button title='Replace image' onClick='replaceImage(imageNodeList[${j}]);' type='button' class='btn btn-primary btn-xs'>
        <span class='glyphicon glyphicon-import' aria-hidden='true'></span></button>
        </span>
        </td>`;
@@ -190,6 +184,7 @@ function workingGalleryHTML(workRevision) {
     result += `</table></div>`;
     return result;
 }
+
 function checkIfNotArrayMakeArray(ElemetnToCheck) {
     if (!Array.isArray(ElemetnToCheck)) {
         let arr = [];
@@ -198,3 +193,9 @@ function checkIfNotArrayMakeArray(ElemetnToCheck) {
     }
     return ElemetnToCheck;
 }
+function chceckNullValue(val){
+    if(val == null){
+        val = ''
+    }
+    return val
+    }

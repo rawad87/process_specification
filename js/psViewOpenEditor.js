@@ -36,8 +36,6 @@ function getHtmlEditorArea(objValues) {
 }
 
 function editor(objValues) {
-    let paragraphsNodeList = getProcSpec().content.paragraph;
-    console.log(paragraphsNodeList);
     let imageHtml = workingGalleryHTML(objValues.draftRevision["gallery"]);
     let html = `<div class="paragraphEdit">${editorpanel}
     ${objValues.textHtml}<div class="paraimagesEdit">${imageHtml}</div></div>`;
@@ -138,11 +136,13 @@ function getParagraphNodeList(paragraphsNodeList, para_index, objValues) {
             }
         }
     }
+    getObjValues.imageEditorContextworkRevision = draftRevision
 }
 
 function cloneFirstRevision(currentParagraph, z, draftRevision, objValues) {
     var approvedRev = currentParagraph["revision"][z];
-    var clonedNode = { ...approvedRev };
+    // var clonedNode = { ...approvedRev };
+    var clonedNode = JSON.parse(JSON.stringify(approvedRev));
     clonedNode['@state'] = 'draft';
     clonedNode['@approval_time'] = '';
     clonedNode['@approver'] = '';
@@ -162,8 +162,6 @@ function cloneFirstRevision(currentParagraph, z, draftRevision, objValues) {
     objValues.draftRevision = draftRevision;
     let paraNodeList1 = currentParagraph["revision"][z].para;
     objValues.paraNodeList1 = paraNodeList1;
-   // objValues.imageEditorContextworkRevision = draftRevision;
-    getObjValues.imageEditorContextworkRevision = draftRevision;
     return draftRevision;
 }
 
@@ -172,8 +170,6 @@ function getCurrentParagrphRevision(currentParagraph, z, objValues) {
     objValues.draftRevision = draftRevision;
     let paraNodeList1 = currentParagraph["revision"][z].para;
     objValues.paraNodeList1 = paraNodeList1;
-  //  objValues.imageEditorContextworkRevision = draftRevision;
-    getObjValues.imageEditorContextworkRevision = draftRevision;
     return draftRevision;
 }
 
@@ -225,9 +221,8 @@ let getObjValues = () => {
 
 function handleSelectedFile(selectedFile, targetImage) {
     var currentRevision = getObjValues.imageEditorContextworkRevision;
-    var documentRoot = currentRevision;
 
-    var gallery = currentRevision["gallery"];
+    var theGallery = currentRevision["gallery"];
     /* Ensure that no whitespace is within the name  */
     var ImageFileStoredName = ("Fig" + (new Date()).getTime() + selectedFile.name).replace(/[^.,/\w]+/g, '');
     var textElement = ImageFileStoredName;
@@ -235,15 +230,15 @@ function handleSelectedFile(selectedFile, targetImage) {
 
     /* dstImageNode is that object we shall bind the image file to if it does not exist create it */
     if (!dstImageNode) {
-        dstImageNode = documentRoot["image"];
+        dstImageNode = currentRevision["gallery"]["image"];
         dstImageNode = textElement;
-        if (gallery == null || gallery == '') {
-            gallery = {};
-            gallery.image = [];
-            currentRevision["gallery"] = gallery;
+        if (theGallery == null || theGallery == '') {
+            theGallery = {};
+            theGallery.image = [];
+            currentRevision["gallery"] = theGallery;
         }
-        gallery.image = checkIfNotArrayMakeArray(gallery.image)
-        gallery.image.push(dstImageNode);
+        theGallery.image = checkIfNotArrayMakeArray(theGallery.image)
+        theGallery.image.push(dstImageNode);
 
     } else {
         /* leave the element in place but change the the text node within */
@@ -255,7 +250,7 @@ function handleSelectedFile(selectedFile, targetImage) {
 }
 
 function makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision, selectedFile) {
-   
+
     var reader = new FileReader();
     reader.onload = async function () {
         var dataURL = reader.result;
@@ -275,15 +270,14 @@ function makeImageInfoAndSave(targetImage, ImageFileStoredName, currentRevision,
         if (!targetImage) {
             document.getElementById("dropZoneDiv").style.display = 'none';
             document.getElementById("dropZoneContainer").appendChild(previewPic);
-            
+
         }
-       // await dataAccess.saveImage(ImageFileStoredName, dataURL);
-        let paragraphsNodeList = getProcSpec().content.paragraph;
-        console.log(paragraphsNodeList);
+        await dataAccess.saveImage(ImageFileStoredName, dataURL);
         document.getElementById('workingGallery').innerHTML = workingGalleryHTML(currentRevision.gallery)
     };
     reader.readAsDataURL(selectedFile);
 }
+
 
 
 function htmlEditor(state, language, para_index, langstate) {
@@ -345,21 +339,5 @@ function initEditor(e) {
     });
 }
 
-function replaceImage(replaceImageNode) {
-    imageNodeReplaced = replaceImageNode;
-    return function () { document.getElementById('replacementPictureFile').click(); }();
-}
-/* remove from the psdoc */
-function removeImage(node) {
-    let imageEditorContextworkRevision = getObjValues.imageEditorContextworkRevision
-    imageEditorContextworkRevision.gallery['image'] = checkIfNotArrayMakeArray(imageEditorContextworkRevision.gallery['image'])
-    for (let i = 0; i < imageEditorContextworkRevision.gallery['image'].length; i++) {
-        if (imageEditorContextworkRevision.gallery['image'][i].match(node)) {
-            imageEditorContextworkRevision.gallery['image'].splice(i, 1);
-            console.log(imageEditorContextworkRevision.gallery['image'])
-            break
-        }
-    }
-    document.getElementById('workingGallery').innerHTML = workingGalleryHTML(imageEditorContextworkRevision["gallery"]);
-}
+
 

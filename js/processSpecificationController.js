@@ -1,3 +1,4 @@
+
 async function moveParagraph(where, paraIndex) {
 	let paragraphsNodeList = getProcSpec().content.paragraph;
 
@@ -8,7 +9,6 @@ async function moveParagraph(where, paraIndex) {
 	if (where == 'down' && index !== -1 && paragraphsNodeList.length - 1) {
 		paragraphsNodeList[index] = paragraphsNodeList[index + 1];
 		paragraphsNodeList[index + 1] = el;
-		console.log(paragraphsNodeList)
 	}
 	if (where == 'up' && index > 0) {
 		paragraphsNodeList[index] = paragraphsNodeList[index - 1];
@@ -54,7 +54,6 @@ function getContent() {
 async function removeParagraph() {
 	$('#confirmRemoveModal').modal('hide');
 	let paragraphsNodeList = getProcSpec().content.paragraph;
-	let theContent = getProcSpec().content;
 	var paraIndex = getRemoveParIndexId();
 	for (var j = 0; j < paragraphsNodeList.length; j++) {
 		if (paragraphsNodeList[j]['@para_index'] == paraIndex) {
@@ -62,8 +61,7 @@ async function removeParagraph() {
 		}
 	}
 	viewParagraphs();
-	let contentResult = await convertObjToXml(theContent);
-	await dataAccess.savePSContent(docNum(), contentResult)
+	await convertDataAndSendToDataBase();
 	checkDocNode();
 }
 
@@ -71,14 +69,13 @@ function getParagraphTemplate() {
 	return appContext.model.readParagraphTemplate["exist:result"].content;
 }
 function getPsTemplate() {
-	return appContext.model.readPsTemplate["exist:result"].process_specification
+	return appContext.model.readPsTemp["exist:result"].process_specification;
 }
 
 function createParagraph(where, para_index) {
 	let paragraphsNodeList = getProcSpec().content.paragraph;
 
 	paragraphNode = getParagraphTemplate().paragraph;
-	let arr = [];
 
 	var timestamp = getTimestamp();
 	let returnTimeTostr = timestamp.toString();
@@ -89,12 +86,11 @@ function createParagraph(where, para_index) {
 	revisionNode['@rev_index'] = returnTimeTostr;
 
 	let copyParagraphNode = { ...paragraphNode };
+	copyParagraphNode.revision = checkIfNotArrayMakeArray(copyParagraphNode.revision)
 	copyParagraphNode.revision['@rev_index'] = returnTimeTostr
 
-	arr.push(copyParagraphNode.revision)
-	copyParagraphNode.revision = arr;
-
 	for (let i = 0; i < paragraphsNodeList.length; i++) {
+
 		if (paragraphsNodeList[i]['@para_index'] == para_index) {
 			if (where == 'after') {
 				paragraphsNodeList.splice(i + 1, 0, copyParagraphNode);
@@ -109,7 +105,6 @@ function createParagraph(where, para_index) {
 	document.getElementById('paragraph_new_button').style.display = "none";
 
 }
-
 function approveParagraph(para_index) {
 	var displayApprBtn = canApproveParagraph() ? "" : "none";
 	document.getElementById("paraApprovalBtn").style.display = displayApprBtn;
@@ -165,28 +160,12 @@ async function saveAndSendPsInfo(nodeInfo) {
 	let contentResult = await convertObjToXmlInfoForChangeProp(nodeInfo);
 	await dataAccess.savePSInfoTest(docNum, contentResult);
 }
+
 async function saveUpdatedPsContent() {
 	await convertDataAndSendToDataBase();
 
 }
 
-// async function saveUpdatedPsInfo() {
-// 	/* Save the info node of the document */
-// 	// 	readPS();
-// 	let infoNode = getProcSpec().info;
-// 	let contentResult = await convertObjToXml(infoNode);
-// 	await dataAccess.savePsInfo(docNum(), contentResult);
-// 	viewParagraphs();
-// }
-// async function saveUpdatedPsInfo1() {
-// 	/* Save the info node of the document */
-// 	// 	readPS();
-// 	let docNum = getProcSpec().biblioid.docnum;
-// 	let infoNode = getProcSpec().info;
-// 	let contentResult = await convertObjToXmlInfo(infoNode);
-// 	await dataAccess.savePsInfo(docNum, contentResult);
-// 	//viewParagraphs();
-// }
 function updateParagraph(para_index, rev_index) {
 	/* Changing content of paragraph on screen */
 	let paragraphsNodeList = getProcSpec().content.paragraph;
@@ -208,64 +187,20 @@ function updateParagraph(para_index, rev_index) {
 		}
 	}
 	var revisionNode = revisionsNodeList[r];
-	//var author = revisionNode.getAttribute("author");???????
 	for (var i = 0; i < revisionNode["para"].length; i++) {
 		let docLanguages = getLanguage();
 
 		var paraNode = revisionNode["para"];
 		var thelanguage = paraNode[i]["@language"];
-		//	console.log(thelanguage);
-		if (thelanguage == docLanguages[0]) {
-			var newAuthor = paraNode[i]["@author"];
-			newAuthor = isNumber(newAuthor) ? getUserFullname(newAuthor) : newAuthor;
-			newAuthor = "Author: " + newAuthor;
-		}
-		else {
-			var newAuthor = paraNode[i]["@translator"];
-			newAuthor = isNumber(newAuthor) ? getUserFullname(newAuthor) : newAuthor;
-			newAuthor = "Translator: " + newAuthor;
-		}
+		getName(thelanguage, docLanguages, paraNode, i);
 		var newContent = paraNode[i]['text'];
-
 		var newHeading = paraNode[i]['heading'];
 
-
-		/*Find the paragraph with the right index in the DOM document (the html page)*/
-		/* First update text content */
-
 		var divParagraph = document.getElementById(paraid);
-		var domNodeId = "text_" + thelanguage;
-		var blockqoutes = divParagraph.getElementsByTagName("blockquote");
-		var para_author = document.getElementById("para_author_" + para_index + "_" + thelanguage);
-		//alert(para_author.innerHTML);
-		//alert(blockqoutes.length);
-		for (var j = 0; j < blockqoutes.length; j++) {
-			if (blockqoutes[j]['@id'] == domNodeId) {
-				para_author.innerHTML = newAuthor;
-				blockqoutes[j].innerHTML = newContent;
-				if (revisionNode["@state"] == 'draft') {
-					blockqoutes[j].style.backgroundImage = "url(./graphics/draft_mode.png)";
-					blockqoutes[j].style.backgroundRepeat = "no-repeat";
-					blockqoutes[j].style.backgroundPosition = "50% 50%";
-				}
-				else if (revisionNode["@state"] == 'deprecated') {
-					blockqoutes[j].style.backgroundImage = "url(./graphics/deprecated_mode.png)";
-					blockqoutes[j].style.backgroundRepeat = "no-repeat";
-					blockqoutes[j].style.backgroundPosition = "50% 50%";
-				}
-				else {
-					blockqoutes[j].style.backgroundImage = "";
-					blockqoutes[j].style.backgroundRepeat = "";
-					blockqoutes[j].style.backgroundPosition = "";
-				}
-				break;
-			}
-		}
+		finParagraph(thelanguage, newContent, para_index, divParagraph)
 		/* update the gallery */
 		var galleryNode = document.getElementById(parimages);
 		galleryNode.innerHTML = galleryHTML(revisionNode);
-
-
 		/* Then update the heading */
 		domNodeId = "heading_" + thelanguage;
 		var p = divParagraph.getElementsByTagName("p");
@@ -276,18 +211,59 @@ function updateParagraph(para_index, rev_index) {
 			}
 		}
 	}
-	//revisionTableBody(para_index);
 	var tablebody = revisionTableBody(para_index, rev_index);
-	//alert(tablebody);
 	var revTableId = `revisionTableBody_ ${para_index}`;
 	document.getElementById(revTableId).innerHTML = tablebody;
 }
 
+function getName(thelanguage, docLanguages, paraNode, i) {
+	if (thelanguage == docLanguages[0]) {
+		var newAuthor = paraNode[i]["@author"];
+		newAuthor = isNumber(newAuthor) ? getUserFullname(newAuthor) : newAuthor;
+		newAuthor = "Author: " + newAuthor;
+	}
+	else {
+		var newAuthor = paraNode[i]["@translator"];
+		newAuthor = isNumber(newAuthor) ? getUserFullname(newAuthor) : newAuthor;
+		newAuthor = "Translator: " + newAuthor;
+	}
+}
+
+function finParagraph(thelanguage, newContent, para_index, divParagraph) {
+
+	/*Find the paragraph with the right index in the DOM document (the html page)*/
+	/* First update text content */
+
+	var domNodeId = "text_" + thelanguage;
+	var blockqoutes = divParagraph.getElementsByTagName("blockquote");
+	var para_author = document.getElementById("para_author_" + para_index + "_" + thelanguage);
+	for (var j = 0; j < blockqoutes.length; j++) {
+		if (blockqoutes[j]['@id'] == domNodeId) {
+			para_author.innerHTML = newAuthor;
+			blockqoutes[j].innerHTML = newContent;
+			if (revisionNode["@state"] == 'draft') {
+				blockqoutes[j].style.backgroundImage = "url(./graphics/draft_mode.png)";
+				blockqoutes[j].style.backgroundRepeat = "no-repeat";
+				blockqoutes[j].style.backgroundPosition = "50% 50%";
+			}
+			else if (revisionNode["@state"] == 'deprecated') {
+				blockqoutes[j].style.backgroundImage = "url(./graphics/deprecated_mode.png)";
+				blockqoutes[j].style.backgroundRepeat = "no-repeat";
+				blockqoutes[j].style.backgroundPosition = "50% 50%";
+			}
+			else {
+				blockqoutes[j].style.backgroundImage = "";
+				blockqoutes[j].style.backgroundRepeat = "";
+				blockqoutes[j].style.backgroundPosition = "";
+			}
+			break;
+		}
+	}
+}
 
 async function saveDraft(para_index, language, langstate) {
 	let paragraphsNodeList = getProcSpec().content.paragraph;
-	let userIndex = getProcSpec().info.author;
-    let docauthor = (userIndex == '') ? '' : getUserFullname(userIndex);
+
 	/* Save changes from the editor to node list */
 	for (var i = 0; i < paragraphsNodeList.length; i++) {
 		/* Find the right paragraph */
@@ -308,18 +284,18 @@ async function saveDraft(para_index, language, langstate) {
 							if (paraNodeList[i]['text'] != '') {
 								paraNodeList[i]['text'] = encodeXml(newText);
 							}
-							else {paraNodeList[i]['text'] = encodeXml(newText);}
+							else { paraNodeList[i]['text'] = encodeXml(newText); }
 
 							var newHeading = document.getElementById('newparaheading_' + language).value;
 							if (paraNodeList[i]['heading'] != '') {
 								paraNodeList[i]['heading'] = encodeXml(newHeading);
 							}
-							else {paraNodeList[i]['heading'] = encodeXml(newHeading);}
+							else { paraNodeList[i]['heading'] = encodeXml(newHeading); }
 
 							if (langstate == 'main') {
 								paraNodeList[i]["@author"] = userIndex;
 							}
-							else {paraNodeList[i]["@translator"] = userIndex;}
+							else { paraNodeList[i]["@translator"] = userIndex; }
 
 						}
 					}
@@ -338,7 +314,6 @@ async function removeDraft(para_index) {
 		if (paragraphsNodeList[i]['@para_index'] == para_index) {
 			var revisionsNodeList = paragraphsNodeList[i]['revision'];
 			for (var j = 0; j < revisionsNodeList.length; j++) {
-				console.log(revisionsNodeList[j]['@state'])
 				if (revisionsNodeList[j]['@state'] == 'draft') {
 					revisionsNodeList.splice(j, 1);
 				}
@@ -354,6 +329,7 @@ async function saveAndReturn() {
 	viewParagraphs();
 }
 function readRadioChecked(groupname) {
+
 	return $('input[name="' + groupname + '"]:checked').val();
 }
 function readCheckboxChecked(groupname) {
@@ -367,44 +343,35 @@ function readCheckboxChecked(groupname) {
 	return valuearray;
 }
 
-async function saveDocProperties(isNewDoc) {
+function saveDocProperties(isNewDoc) {
 	$('#docpropertiesModal').modal('hide');
 	// ** Get document properties from inputs ** 
 	var docstate = readRadioChecked('docstateRadioBtn');
 	var exrestrict = readRadioChecked('exRadioBtn');
 	var mainlang = readRadioChecked('mainLangRadioBtn');
-	var pstype = readRadioChecked('psTypeRadioBtn');
+	// var pstype = readRadioChecked('psTypeRadioBtn');
 	var docTitle = document.getElementById('titleInput').value;
 	var docSubTitle = document.getElementById('subTitleInput').value;
 	var sublangArray = readCheckboxChecked('subLangChkBtn');
 	var sublang = sublangArray.join("-");
 	// ** Save new properties to document **
 	var nodeInfo = getProcSpec().info;
-	console.log(nodeInfo)
-
 	nodeInfo.document_state = docstate
-	
 	nodeInfo.ex = exrestrict;
-
 	nodeInfo.title = docTitle;
-	console.log(nodeInfo.title)
-
 	nodeInfo.subtitle = docSubTitle;
-	console.log(nodeInfo.subtitle);
+
+	// 	nodeInfo.type = pstype;
 
 	nodeInfo.languages['@main'] = mainlang;
 	nodeInfo.languages['@sub'] = sublang;
 	if (isNewDoc == 'true') {
 		nodeInfo.author = userIndex;
-		await saveNewPS();
+		saveNewPS();
 
 	}
 	else {
-		
-		let docNum = getProcSpec().biblioid.docnum;
-		let contentResult = await convertObjToXmlInfoForChangeProp(nodeInfo);
-		console.log(contentResult)
-		await dataAccess.savePSInfoTest(docNum, contentResult);
+		saveAndSendPsInfo(nodeInfo);
 
 	}
 	viewParagraphs();
@@ -417,13 +384,84 @@ async function saveNewPS() {
 	let contentResult = await convertObjToXmlInfo(theContent);
 	await dataAccess.saveNewPS(contentResult);
 
-	// check if this function importatnt	updateOwnerModule(docnum);
+}
 
+function replaceImage(replaceImageNode) {
+    imageNodeReplaced = replaceImageNode;
+    return function () { document.getElementById('replacementPictureFile').click(); }();
 }
-function updateOwnerModule(docnum) {
-	var jqObject = readAjaxXML("updateOwnerModule", docnum, callerModuleNum);
-	jqObject.done(function() {
-		//alert(jqObject.responseText);
-		window.location = "pspec.php?docnum=" + docnum;
-	})
+/* remove from the psdoc */
+function removeImage(node) {
+    let imageEditorContextworkRevision = getObjValues.imageEditorContextworkRevision
+    imageEditorContextworkRevision.gallery['image'] = checkIfNotArrayMakeArray(imageEditorContextworkRevision.gallery['image'])
+    for (let i = 0; i < imageEditorContextworkRevision.gallery['image'].length; i++) {
+
+        if (imageEditorContextworkRevision.gallery['image'][i].match(node)) {
+            imageEditorContextworkRevision.gallery['image'].splice(i, 1);
+
+        }
+    }
+    document.getElementById('workingGallery').innerHTML = workingGalleryHTML(imageEditorContextworkRevision["gallery"]);
 }
+function findElements(tagName, id_part) {
+	// Find an element of a kind, with a id that math a part string
+	var tags = document.getElementsByTagName(tagName);
+	var matches = new Array();
+	// iterate over them
+	for (var i = 0; tags[i]; i++) {
+		if (tags[i].nodeType === 1) {
+			// id start with id_part ?
+			if (tags[i].id.indexOf(id_part) == 0) {
+				matches.push(tags[i]);
+			}
+		}
+	}
+	return matches;
+}
+function visibleLanguage(btnid) {
+	var all_state = getLangState(btnid);
+	let languagesArray = ['en', 'no', 'lt'];
+	for (let a = 0; a < languagesArray.length; a++) {
+		let langArr = languagesArray[a];
+		let id = `paradiv_${langArr}`
+		let getId = findElements('div', id)
+		for (var j = 0; j < getId.length; j++) {
+			if (all_state == true) {
+				getId[j].style.display = "";
+			}
+			else {
+				getId[j].style.display = lan_states[a];
+			}
+		}
+
+	}
+}
+function getLangState(btnid) {
+	var en_state = "";
+	var lt_state = "";
+	var no_state = "";
+	var all_state = "";
+	switch (btnid) {
+		case "lanbtn_en":
+			en_state = "";
+			lt_state = "none";
+			no_state = "none";
+			break;
+		case "lanbtn_lt":
+			en_state = "none";
+			lt_state = "";
+			no_state = "none";
+			break;
+		case "lanbtn_no":
+			en_state = "none";
+			lt_state = "none";
+			no_state = "";
+			break;
+		default:
+			all_state = true;
+			break;
+	}
+	lan_states = [en_state, no_state, lt_state];
+	return all_state;
+}
+
